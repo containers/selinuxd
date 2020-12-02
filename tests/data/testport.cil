@@ -1,0 +1,11 @@
+; Declare a test_port_t type
+(type test_port_t)
+; Assign the type to the object_r role
+(roletype object_r test_port_t)
+
+; Assign the right set of attributes to the port
+(typeattributeset defined_port_type test_port_t)
+(typeattributeset port_type test_port_t)
+
+; Declare tcp:1440 as test_port_t
+(portcon tcp 1440 (system_u object_r test_port_t ((s0) (s0))))

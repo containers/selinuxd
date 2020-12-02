@@ -1,0 +1,84 @@
+# github.com/fsnotify/fsnotify v1.4.9
+## explicit
+github.com/fsnotify/fsnotify
+# github.com/go-logr/logr v0.3.0
+## explicit
+github.com/go-logr/logr
+# github.com/go-logr/zapr v0.3.0
+## explicit
+github.com/go-logr/zapr
+# github.com/hashicorp/hcl v1.0.0
+github.com/hashicorp/hcl
+github.com/hashicorp/hcl/hcl/ast
+github.com/hashicorp/hcl/hcl/parser
+github.com/hashicorp/hcl/hcl/printer
+github.com/hashicorp/hcl/hcl/scanner
+github.com/hashicorp/hcl/hcl/strconv
+github.com/hashicorp/hcl/hcl/token
+github.com/hashicorp/hcl/json/parser
+github.com/hashicorp/hcl/json/scanner
+github.com/hashicorp/hcl/json/token
+# github.com/inconshreveable/mousetrap v1.0.0
+github.com/inconshreveable/mousetrap
+# github.com/magiconair/properties v1.8.4
+## explicit
+github.com/magiconair/properties
+# github.com/mitchellh/go-homedir v1.1.0
+## explicit
+github.com/mitchellh/go-homedir
+# github.com/mitchellh/mapstructure v1.4.0
+## explicit
+github.com/mitchellh/mapstructure
+# github.com/pelletier/go-toml v1.8.1
+## explicit
+github.com/pelletier/go-toml
+# github.com/spf13/afero v1.4.1
+## explicit
+github.com/spf13/afero
+github.com/spf13/afero/mem
+# github.com/spf13/cast v1.3.1
+## explicit
+github.com/spf13/cast
+# github.com/spf13/cobra v1.1.1
+## explicit
+github.com/spf13/cobra
+# github.com/spf13/jwalterweatherman v1.1.0
+## explicit
+github.com/spf13/jwalterweatherman
+# github.com/spf13/pflag v1.0.5
+github.com/spf13/pflag
+# github.com/spf13/viper v1.7.1
+## explicit
+github.com/spf13/viper
+# github.com/subosito/gotenv v1.2.0
+github.com/subosito/gotenv
+# go.uber.org/atomic v1.7.0
+go.uber.org/atomic
+# go.uber.org/multierr v1.6.0
+## explicit
+go.uber.org/multierr
+# go.uber.org/zap v1.16.0
+## explicit
+go.uber.org/zap
+go.uber.org/zap/buffer
+go.uber.org/zap/internal/bufferpool
+go.uber.org/zap/internal/color
+go.uber.org/zap/internal/exit
+go.uber.org/zap/zapcore
+# golang.org/x/sys v0.0.0-20201201145000-ef89a241ccb3
+## explicit
+golang.org/x/sys/internal/unsafeheader
+golang.org/x/sys/unix
+# golang.org/x/text v0.3.4
+## explicit
+golang.org/x/text/transform
+golang.org/x/text/unicode/norm
+# gopkg.in/fsnotify.v1 v1.4.7
+## explicit
+gopkg.in/fsnotify.v1
+# gopkg.in/ini.v1 v1.62.0
+## explicit
+gopkg.in/ini.v1
+# gopkg.in/yaml.v2 v2.4.0
+## explicit
+gopkg.in/yaml.v2
