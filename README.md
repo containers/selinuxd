@@ -126,7 +126,7 @@ as opposed to the daemonset-based approach which was taken initially.
 TODO
 ====
 
-* Use `semanage` as a library instead of calling `semodule`.
+* Use `libsemanage` as a library instead of calling `semodule`.
 
   - This should run as a standalone binary, and not require other commands in order to run.
 
