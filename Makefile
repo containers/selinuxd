@@ -10,7 +10,7 @@ all: build
 .PHONY: build
 build: $(BIN)
 
-$(BIN): $(BINDIR) $(SRC)
+$(BIN): $(BINDIR) $(SRC) pkg/semanage/callbacks.c
 	go build -o $(BIN) .
 
 .PHONY: run

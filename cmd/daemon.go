@@ -19,10 +19,8 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"strings"
 	"syscall"
 
 	"github.com/go-logr/logr"
@@ -30,6 +28,8 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"gopkg.in/fsnotify.v1"
+
+	"github.com/JAORMX/selinuxd/pkg/semanage"
 )
 
 // daemonCmd represents the daemon command
@@ -76,52 +76,49 @@ func (po policyOp) String() string {
 
 const modulePath = "/etc/selinux.d"
 
-func (pa policyAction) do() (string, error) {
-	var opFlag string
+func (pa policyAction) do(sh *semanage.SeHandler) (string, error) {
 	var policyArg string
+	var err error
+
 	switch pa.operation {
 	case install:
-		opFlag = "-i"
 		policyPath, err := getSafePath(pa.path)
 		if err != nil {
 			return "", err
 		}
-		policyArg = policyPath
+		err = sh.SmInstallFile(policyPath)
 	case remove:
-		opFlag = "-r"
 		baseFile, err := getCleanBase(pa.path)
 		if err != nil {
 			return "", err
 		}
 		policyArg = getFileWithoutExtension(baseFile)
 
-		if !pa.moduleInstalled(policyArg) {
+		if !pa.moduleInstalled(sh, policyArg) {
 			return "No action needed; Module is not in the system", nil
 		}
+
+		err = sh.SmRemove(policyArg)
 	default:
 		return "", fmt.Errorf("Unkown operation for policy %s. This shouldn't happen", pa.path)
 	}
 
-	// TODO(jaosorior): Replace commands to semodule with an actual
-	// library call to semanage
-	cmd := exec.Command("/usr/sbin/semodule", opFlag, policyArg)
-	out, err := cmd.CombinedOutput()
-	return string(out), err
+	return "", err
 }
 
-func (pa policyAction) moduleInstalled(policy string) bool {
-	// TODO(jaosorior): Replace commands to semodule with an actual
-	// library call to semanage
-	grep := exec.Command("/usr/bin/grep", policy)
-	ps := exec.Command("/usr/sbin/semodule", "-l")
-	pipe, _ := ps.StdoutPipe()
-	grep.Stdin = pipe
-	defer pipe.Close()
-	ps.Start()
-	// Run and get the output of grep.
-	res, _ := grep.Output()
-	// We have this policy installed if it appeared in the grep's output
-	return strings.Trim(string(res), "\n") != ""
+func (pa policyAction) moduleInstalled(sh *semanage.SeHandler, policy string) bool {
+	currentModules, err := sh.SmList()
+	if err != nil {
+		return false
+	}
+
+	for _, mod := range currentModules {
+		if policy == mod {
+			return true
+		}
+	}
+
+	return false
 }
 
 func getFileWithoutExtension(filename string) string {
@@ -174,6 +171,12 @@ func Daemon(done chan bool, logger logr.Logger) {
 
 	logger.Info("Started daemon")
 
+	sh, err := semanage.SmInit(logger)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer sh.SmDone()
+
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
@@ -183,7 +186,7 @@ func Daemon(done chan bool, logger logr.Logger) {
 	// TODO(jaosorior): Enable multiple watchers
 	go watchFiles(watcher, policyops, logger)
 
-	go installPolicies(policyops, logger)
+	go installPolicies(sh, policyops, logger)
 
 	err = watcher.Add(modulePath)
 	if err != nil {
@@ -220,7 +223,7 @@ func watchFiles(watcher *fsnotify.Watcher, policyops chan policyAction, logger l
 	}
 }
 
-func installPolicies(policyops chan policyAction, logger logr.Logger) {
+func installPolicies(sh *semanage.SeHandler, policyops chan policyAction, logger logr.Logger) {
 	ilog := logger.WithName("policy-installer")
 	for {
 		action, ok := <-policyops
@@ -228,14 +231,14 @@ func installPolicies(policyops chan policyAction, logger logr.Logger) {
 			ilog.Info("WARNING: the actions channel has been closed or is empty")
 			return // TODO(jaosorior): Actually signal exit
 		}
-		if actionOut, err := action.do(); err != nil {
+		if actionOut, err := action.do(sh); err != nil {
 			ilog.Error(err, "Failed applying operation on policy", "operation", action.operation, "policy", action.path, "output", actionOut)
 		} else {
 			// TODO(jaosorior): Replace this log with proper tracking of the installation status
 			if actionOut == "" {
 				actionOut = "The operation was successful"
 			}
-			logger.Info(string(actionOut))
+			logger.Info(actionOut)
 		}
 	}
 }
