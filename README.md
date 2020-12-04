@@ -126,9 +126,9 @@ as opposed to the daemonset-based approach which was taken initially.
 TODO
 ====
 
-* Use `libsemanage` as a library instead of calling `semodule`.
+* Compile as a single binary instead of linking to the shared libraries
 
-  - This should run as a standalone binary, and not require other commands in order to run.
+  - This uses the libsemanage library to interact with SELinux.
 
   - The intent is to make this available in Fedora CoreOS and RHCOS in the future.
 
