@@ -15,7 +15,7 @@ Building
 Golang 1.15 and GNU make are required. In Fedora 33, the installation is a matter of doing:
 
 ```
-$ sudo dnf install golang make
+$ sudo dnf install golang make libsemanage-devel
 ```
 
 With this, you can build the daemon's binary with `make build`, or simply
