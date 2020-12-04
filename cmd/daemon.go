@@ -188,6 +188,11 @@ func Daemon(done chan bool, logger logr.Logger) {
 
 	go installPolicies(sh, policyops, logger)
 
+	// NOTE(jaosorior): We do this before adding the path to the notification
+	// watcher so all the policies are installed already when we start watching
+	// for events.
+	installPoliciesInDir(modulePath, policyops)
+
 	err = watcher.Add(modulePath)
 	if err != nil {
 		logger.Error(err, "Could not create an fsnotify watcher")
@@ -241,4 +246,14 @@ func installPolicies(sh *semanage.SeHandler, policyops chan policyAction, logger
 			logger.Info(actionOut)
 		}
 	}
+}
+
+func installPoliciesInDir(mpath string, policyops chan policyAction) {
+	filepath.Walk(mpath, func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+		policyops <- policyAction{path: path, operation: install}
+		return nil
+	})
 }
