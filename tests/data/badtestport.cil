@@ -1,0 +1,8 @@
+; Declare a test_port_t type... it's missing a parenthesis
+(type test_port_t
+(roletype object_r test_port_t)
+
+(typeattributeset defined_port_type test_port_t)
+(typeattributeset port_type test_port_t)
+
+(portcon tcp 1440 (system_u object_r test_port_t ((s0) (s0))))
