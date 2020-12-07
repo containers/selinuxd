@@ -16,20 +16,18 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
-	"gopkg.in/fsnotify.v1"
 
-	"github.com/JAORMX/selinuxd/pkg/semanage"
+	"github.com/JAORMX/selinuxd/pkg/daemon"
+	"github.com/JAORMX/selinuxd/pkg/semodule/semanage"
 )
 
 // daemonCmd represents the daemon command
@@ -49,104 +47,6 @@ func init() {
 	rootCmd.AddCommand(daemonCmd)
 }
 
-// Defines an action to be taken on a policy file on the specified path
-type policyAction struct {
-	path      string
-	operation policyOp
-}
-
-// defines the operation that an action will take on the file
-type policyOp int16
-
-const (
-	install policyOp = iota
-	remove  policyOp = iota
-)
-
-func (po policyOp) String() string {
-	switch po {
-	case install:
-		return "install"
-	case remove:
-		return "remove"
-	default:
-		return "unknown"
-	}
-}
-
-const modulePath = "/etc/selinux.d"
-
-func (pa policyAction) do(sh *semanage.SeHandler) (string, error) {
-	var policyArg string
-	var err error
-
-	switch pa.operation {
-	case install:
-		policyPath, err := getSafePath(pa.path)
-		if err != nil {
-			return "", err
-		}
-		err = sh.SmInstallFile(policyPath)
-	case remove:
-		baseFile, err := getCleanBase(pa.path)
-		if err != nil {
-			return "", err
-		}
-		policyArg = getFileWithoutExtension(baseFile)
-
-		if !pa.moduleInstalled(sh, policyArg) {
-			return "No action needed; Module is not in the system", nil
-		}
-
-		err = sh.SmRemove(policyArg)
-	default:
-		return "", fmt.Errorf("Unkown operation for policy %s. This shouldn't happen", pa.path)
-	}
-
-	return "", err
-}
-
-func (pa policyAction) moduleInstalled(sh *semanage.SeHandler, policy string) bool {
-	currentModules, err := sh.SmList()
-	if err != nil {
-		return false
-	}
-
-	for _, mod := range currentModules {
-		if policy == mod {
-			return true
-		}
-	}
-
-	return false
-}
-
-func getFileWithoutExtension(filename string) string {
-	var extension = filepath.Ext(filename)
-	return filename[0 : len(filename)-len(extension)]
-}
-
-func getCleanBase(path string) (string, error) {
-	// NOTE: don't trust the path even if it came from fsnotify
-	cleanPath := filepath.Clean(path)
-	if cleanPath == "" {
-		return "", fmt.Errorf("Invalid path: %s", path)
-	}
-
-	// NOTE: Still not trusting that path. Let's just use the base
-	// and use our configured base path
-	return filepath.Base(cleanPath), nil
-}
-
-func getSafePath(path string) (string, error) {
-	policyFileBase, err := getCleanBase(path)
-	if err != nil {
-		return "", err
-	}
-	policyPath := filepath.Join(modulePath, policyFileBase)
-	return policyPath, nil
-}
-
 func getLogger() logr.Logger {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync() // flushes buffer, if any
@@ -154,106 +54,22 @@ func getLogger() logr.Logger {
 }
 
 func daemonCmdFunc(cmd *cobra.Command, args []string) {
+	const modulePath = "/etc/selinux.d"
+
 	logger := getLogger()
 	exitSignal := make(chan os.Signal, 1)
 	done := make(chan bool)
 	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
 
-	go Daemon(done, logger)
+	sh, err := semanage.NewSemanageHandler(logger)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer sh.Close()
+
+	go daemon.Daemon(modulePath, sh, done, logger)
 
 	<-exitSignal
 	logger.Info("Exit signal received")
 	done <- true
-}
-
-func Daemon(done chan bool, logger logr.Logger) {
-	policyops := make(chan policyAction)
-
-	logger.Info("Started daemon")
-
-	sh, err := semanage.SmInit(logger)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer sh.SmDone()
-
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer watcher.Close()
-
-	// TODO(jaosorior): Enable multiple watchers
-	go watchFiles(watcher, policyops, logger)
-
-	go installPolicies(sh, policyops, logger)
-
-	// NOTE(jaosorior): We do this before adding the path to the notification
-	// watcher so all the policies are installed already when we start watching
-	// for events.
-	installPoliciesInDir(modulePath, policyops)
-
-	err = watcher.Add(modulePath)
-	if err != nil {
-		logger.Error(err, "Could not create an fsnotify watcher")
-	}
-
-	<-done
-}
-
-func watchFiles(watcher *fsnotify.Watcher, policyops chan policyAction, logger logr.Logger) {
-	fwlog := logger.WithName("file-watcher")
-	for {
-		select {
-		case event, ok := <-watcher.Events:
-			if !ok {
-				fwlog.Info("WARNING: the fsnotify channel has been closed or is empty")
-				return // TODO(jaosorior): Actually signal exit
-			}
-			if event.Op&fsnotify.Remove != 0 {
-				fwlog.Info("Removing policy", "file", event.Name)
-				policyops <- policyAction{path: event.Name, operation: remove}
-			} else if event.Op&(fsnotify.Write|fsnotify.Create) != 0 {
-				fwlog.Info("Installing policy", "file", event.Name)
-				policyops <- policyAction{path: event.Name, operation: install}
-			}
-			// TODO(jaosorior): handle rename
-		case err, ok := <-watcher.Errors:
-			if !ok {
-				fwlog.Info("WARNING: the fsnotify channel has been closed or is empty")
-				return // TODO(jaosorior): Actually signal exit
-			}
-			fwlog.Error(err, "Error watching for event")
-		}
-	}
-}
-
-func installPolicies(sh *semanage.SeHandler, policyops chan policyAction, logger logr.Logger) {
-	ilog := logger.WithName("policy-installer")
-	for {
-		action, ok := <-policyops
-		if !ok {
-			ilog.Info("WARNING: the actions channel has been closed or is empty")
-			return // TODO(jaosorior): Actually signal exit
-		}
-		if actionOut, err := action.do(sh); err != nil {
-			ilog.Error(err, "Failed applying operation on policy", "operation", action.operation, "policy", action.path, "output", actionOut)
-		} else {
-			// TODO(jaosorior): Replace this log with proper tracking of the installation status
-			if actionOut == "" {
-				actionOut = "The operation was successful"
-			}
-			logger.Info(actionOut)
-		}
-	}
-}
-
-func installPoliciesInDir(mpath string, policyops chan policyAction) {
-	filepath.Walk(mpath, func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
-			return nil
-		}
-		policyops <- policyAction{path: path, operation: install}
-		return nil
-	})
 }
