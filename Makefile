@@ -10,8 +10,12 @@ all: build
 .PHONY: build
 build: $(BIN)
 
-$(BIN): $(BINDIR) $(SRC) pkg/semanage/callbacks.c
+$(BIN): $(BINDIR) $(SRC) pkg/semodule/semanage/callbacks.c
 	go build -o $(BIN) .
+
+.PHONY: test
+test:
+	go test github.com/JAORMX/selinuxd/...
 
 .PHONY: run
 run: $(BIN) $(POLICYDIR)

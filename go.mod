@@ -3,6 +3,7 @@ module github.com/JAORMX/selinuxd
 go 1.15
 
 require (
+	github.com/cenkalti/backoff/v4 v4.1.0
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/go-logr/logr v0.3.0
 	github.com/go-logr/zapr v0.3.0

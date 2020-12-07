@@ -17,6 +17,8 @@ import (
 	"unsafe"
 
 	"github.com/go-logr/logr"
+
+	"github.com/JAORMX/selinuxd/pkg/semodule"
 )
 
 var globLogger logr.Logger
@@ -33,7 +35,9 @@ type SeHandler struct {
 	handle *C.semanage_handle_t
 }
 
-func SmInit(logger logr.Logger) (*SeHandler, error) {
+// NewSemanageHandler creates a new instance of a SEModuleHandler that
+// handles SELinux module interactions through the semanage interface
+func NewSemanageHandler(logger logr.Logger) (semodule.SEModuleHandler, error) {
 	globLogger = logger
 	handle := C.semanage_handle_create()
 	if handle == nil {
@@ -74,7 +78,7 @@ func (sm *SeHandler) getNthModName(n int, modInfoList *C.semanage_module_info_t)
 	return C.GoString(cName), free
 }
 
-func (sm *SeHandler) SmList() ([]string, error) {
+func (sm *SeHandler) List() ([]string, error) {
 	var modInfoList *C.semanage_module_info_t
 	var cNmod C.int
 
@@ -103,7 +107,7 @@ func (sm *SeHandler) SmList() ([]string, error) {
 	return modNames, nil
 }
 
-func (sm *SeHandler) SmRemove(moduleName string) error {
+func (sm *SeHandler) Remove(moduleName string) error {
 	if sm.handle == nil {
 		return errors.New("nil handle")
 	}
@@ -119,7 +123,7 @@ func (sm *SeHandler) SmRemove(moduleName string) error {
 	return sm.commit()
 }
 
-func (sm *SeHandler) SmInstallFile(moduleFile string) error {
+func (sm *SeHandler) Install(moduleFile string) error {
 	if sm.handle == nil {
 		return errors.New("nil handle")
 	}
@@ -148,10 +152,14 @@ func (sm *SeHandler) commit() error {
 	return nil
 }
 
-func (sm *SeHandler) SmDone() {
+// Close disconnects the Semanage handler's connection.
+// It implements the Closer interface [1]
+//
+// [1] https://golang.org/pkg/io/#Closer
+func (sm *SeHandler) Close() error {
 	if sm.handle == nil {
 		// semanage uses asserts and just crashes when the pointer is NULL
-		return
+		return nil
 	}
 
 	rv := C.semanage_is_connected(sm.handle)
@@ -161,4 +169,5 @@ func (sm *SeHandler) SmDone() {
 
 	C.semanage_handle_destroy(sm.handle)
 	sm.handle = nil
+	return nil
 }
