@@ -50,10 +50,10 @@ func watchFiles(watcher *fsnotify.Watcher, policyops chan policyAction, logger l
 			}
 			if event.Op&fsnotify.Remove != 0 {
 				fwlog.Info("Removing policy", "file", event.Name)
-				policyops <- policyAction{path: event.Name, operation: remove}
+				policyops <- NewRemoveAction(event.Name)
 			} else if event.Op&(fsnotify.Write|fsnotify.Create) != 0 {
 				fwlog.Info("Installing policy", "file", event.Name)
-				policyops <- policyAction{path: event.Name, operation: install}
+				policyops <- NewInstallAction(event.Name)
 			}
 			// TODO(jaosorior): handle rename
 		case err, ok := <-watcher.Errors:
@@ -75,13 +75,13 @@ func installPolicies(modulePath string, sh semodule.SEModuleHandler, policyops c
 			return // TODO(jaosorior): Actually signal exit
 		}
 		if actionOut, err := action.do(modulePath, sh); err != nil {
-			ilog.Error(err, "Failed applying operation on policy", "operation", action.operation, "policy", action.path, "output", actionOut)
+			ilog.Error(err, "Failed applying operation on policy", "operation", action, "output", actionOut)
 		} else {
 			// TODO(jaosorior): Replace this log with proper tracking of the installation status
 			if actionOut == "" {
 				actionOut = "The operation was successful"
 			}
-			logger.Info(actionOut)
+			ilog.Info(actionOut, "operation", action)
 		}
 	}
 }
@@ -91,7 +91,7 @@ func installPoliciesInDir(mpath string, policyops chan policyAction) {
 		if info.IsDir() {
 			return nil
 		}
-		policyops <- policyAction{path: path, operation: install}
+		policyops <- NewInstallAction(path)
 		return nil
 	})
 }
