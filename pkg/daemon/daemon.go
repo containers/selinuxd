@@ -88,7 +88,7 @@ func installPolicies(modulePath string, sh semodule.SEModuleHandler, policyops c
 
 func installPoliciesInDir(mpath string, policyops chan policyAction) {
 	filepath.Walk(mpath, func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
+		if info == nil || info.IsDir() {
 			return nil
 		}
 		policyops <- NewInstallAction(path)
