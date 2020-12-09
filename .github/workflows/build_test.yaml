@@ -12,10 +12,8 @@ jobs:
       image: centos:${{ matrix.centos }}
     steps:
       - uses: actions/checkout@v2
-      - name: remove media repo
-        run: rm -f /etc/yum.repos.d/CentOS-Media.repo
       - name: install packages
-        run: yum -y --enablerepo=\* install golang make libsemanage-devel
+        run: yum -y --enablerepo=powertools install golang make libsemanage-devel
       - name: build selinuxd
         run: |
           make
