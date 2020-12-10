@@ -4,6 +4,18 @@ POLICYDIR=/etc/selinux.d
 
 SRC=$(shell find . -name "*.go")
 
+# External Helper variables
+
+GOLANGCI_LINT_VERSION=1.33.0
+GOLANGCI_LINT_OS=linux
+ifeq ($(OS_NAME), Darwin)
+    GOLANGCI_LINT_OS=darwin
+endif
+GOLANGCI_LINT_URL=https://github.com/golangci/golangci-lint/releases/download/v$(GOLANGCI_LINT_VERSION)/golangci-lint-$(GOLANGCI_LINT_VERSION)-$(GOLANGCI_LINT_OS)-amd64.tar.gz
+
+
+# Targets
+
 .PHONY: all
 all: build
 
@@ -26,3 +38,25 @@ $(BINDIR):
 
 $(POLICYDIR):
 	mkdir -p $(POLICYDIR)
+
+.PHONY: verify
+verify: mod-verify verify-go-lint ## Run code lint checks
+
+.PHONY: mod-verify
+mod-verify:
+	@go mod verify
+
+.PHONY: verify-go-lint
+verify-go-lint: golangci-lint ## Verify the golang code by linting
+	GOLANGCI_LINT_CACHE=/tmp/golangci-cache $(GOPATH)/bin/golangci-lint run
+
+# Install external dependencies
+.PHONY: golangci-lint
+golangci-lint: $(GOPATH)/bin/golangci-lint
+
+$(GOPATH)/bin/golangci-lint:
+	curl -L --output - $(GOLANGCI_LINT_URL) | \
+		tar xz --strip-components 1 -C $(GOPATH)/bin/ golangci-lint-$(GOLANGCI_LINT_VERSION)-$(GOLANGCI_LINT_OS)-amd64/golangci-lint || \
+		(echo "curl returned $$? trying to fetch golangci-lint. please install golangci-lint and try again"; exit 1); \
+	GOLANGCI_LINT_CACHE=/tmp/golangci-cache $(GOPATH)/bin/golangci-lint version
+	GOLANGCI_LINT_CACHE=/tmp/golangci-cache $(GOPATH)/bin/golangci-lint linters
