@@ -1,8 +1,8 @@
 package semodule
 
-// SEModuleHandler implements an interface to interact
+// Handler implements an interface to interact
 // with SELinux modules.
-type SEModuleHandler interface {
+type Handler interface {
 	Install(string) error
 	List() ([]string, error)
 	Remove(string) error

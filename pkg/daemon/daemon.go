@@ -14,10 +14,15 @@ type SelinuxdOptions struct {
 	StatusServerConfig
 }
 
-func Daemon(options *SelinuxdOptions, modulePath string, sh semodule.SEModuleHandler, done chan bool, logger logr.Logger) {
+// Daemon takes the following parameters:
+// * `opts`: are the options to run status server.
+// * `mPath`: is the path to install and read modules from.
+// * `sh`: is the SELinux module handler interface.
+// * `l`: is a logger interface.
+func Daemon(opts *SelinuxdOptions, mPath string, sh semodule.Handler, done chan bool, l logr.Logger) {
 	policyops := make(chan policyAction)
 
-	logger.Info("Started daemon")
+	l.Info("Started daemon")
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -26,20 +31,22 @@ func Daemon(options *SelinuxdOptions, modulePath string, sh semodule.SEModuleHan
 	defer watcher.Close()
 
 	// TODO(jaosorior): Enable multiple watchers
-	go watchFiles(watcher, policyops, logger)
+	go watchFiles(watcher, policyops, l)
 
-	go installPolicies(modulePath, sh, policyops, logger)
+	go installPolicies(mPath, sh, policyops, l)
 
-	go serveState(options.StatusServerConfig, sh, logger)
+	go serveState(opts.StatusServerConfig, sh, l)
 
 	// NOTE(jaosorior): We do this before adding the path to the notification
 	// watcher so all the policies are installed already when we start watching
 	// for events.
-	installPoliciesInDir(modulePath, policyops)
+	if err := installPoliciesInDir(mPath, policyops); err != nil {
+		l.Error(err, "Installing policies in module directory")
+	}
 
-	err = watcher.Add(modulePath)
+	err = watcher.Add(mPath)
 	if err != nil {
-		logger.Error(err, "Could not create an fsnotify watcher")
+		l.Error(err, "Could not create an fsnotify watcher")
 	}
 
 	<-done
@@ -56,10 +63,10 @@ func watchFiles(watcher *fsnotify.Watcher, policyops chan policyAction, logger l
 			}
 			if event.Op&fsnotify.Remove != 0 {
 				fwlog.Info("Removing policy", "file", event.Name)
-				policyops <- NewRemoveAction(event.Name)
+				policyops <- newRemoveAction(event.Name)
 			} else if event.Op&(fsnotify.Write|fsnotify.Create) != 0 {
 				fwlog.Info("Installing policy", "file", event.Name)
-				policyops <- NewInstallAction(event.Name)
+				policyops <- newInstallAction(event.Name)
 			}
 			// TODO(jaosorior): handle rename
 		case err, ok := <-watcher.Errors:
@@ -72,7 +79,7 @@ func watchFiles(watcher *fsnotify.Watcher, policyops chan policyAction, logger l
 	}
 }
 
-func installPolicies(modulePath string, sh semodule.SEModuleHandler, policyops chan policyAction, logger logr.Logger) {
+func installPolicies(modulePath string, sh semodule.Handler, policyops chan policyAction, logger logr.Logger) {
 	ilog := logger.WithName("policy-installer")
 	for {
 		action, ok := <-policyops
@@ -92,12 +99,12 @@ func installPolicies(modulePath string, sh semodule.SEModuleHandler, policyops c
 	}
 }
 
-func installPoliciesInDir(mpath string, policyops chan policyAction) {
-	filepath.Walk(mpath, func(path string, info os.FileInfo, err error) error {
+func installPoliciesInDir(mpath string, policyops chan policyAction) error {
+	return filepath.Walk(mpath, func(path string, info os.FileInfo, err error) error {
 		if info == nil || info.IsDir() {
 			return nil
 		}
-		policyops <- NewInstallAction(path)
+		policyops <- newInstallAction(path)
 		return nil
 	})
 }

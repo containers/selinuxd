@@ -23,6 +23,38 @@ import (
 
 var globLogger logr.Logger
 
+// errors
+var (
+	// ErrHandleCreate is an error when getting a handle to semanage
+	ErrHandleCreate = errors.New("could not create handle")
+	// ErrSELinuxDBConnect is an error to connect to the SELinux database
+	ErrSELinuxDBConnect = errors.New("could not connect to the SELinux DB")
+	// ErrNilHandle would happen if you initialized the Handler without
+	// the using the `NewSemanageHandler` function or without initializing
+	// the underlying semanage handler
+	ErrNilHandle = errors.New("nil semanage handle")
+	// ErrList is an error listing the SELinux modules
+	ErrList = errors.New("cannot list")
+	// ErrCannotRemoveModule is an error removing a SELinux module
+	ErrCannotRemoveModule = errors.New("cannot remove module")
+	// ErrCannotInstallModule is an error installing a SELinux module
+	ErrCannotInstallModule = errors.New("cannot install module")
+	// ErrCommit is an error when commiting the changes to the SELinux policy
+	ErrCommit = errors.New("cannot commit changes to policy")
+)
+
+func NewErrCannotRemoveModule(mName string) error {
+	return fmt.Errorf("%w: %s", ErrCannotRemoveModule, mName)
+}
+
+func NewErrCannotInstallModule(mName string) error {
+	return fmt.Errorf("%w: %s", ErrCannotInstallModule, mName)
+}
+
+func NewErrCommit(origErrVal int) error {
+	return fmt.Errorf("%w - error code: %d", ErrCannotInstallModule, origErrVal)
+}
+
 //export LogWrapper
 func LogWrapper(cmsg *C.char, level C.int) {
 	msg := C.GoString(cmsg)
@@ -35,20 +67,20 @@ type SeHandler struct {
 	handle *C.semanage_handle_t
 }
 
-// NewSemanageHandler creates a new instance of a SEModuleHandler that
+// NewSemanageHandler creates a new instance of a semodule.Handler that
 // handles SELinux module interactions through the semanage interface
-func NewSemanageHandler(logger logr.Logger) (semodule.SEModuleHandler, error) {
+func NewSemanageHandler(logger logr.Logger) (semodule.Handler, error) {
 	globLogger = logger
 	handle := C.semanage_handle_create()
 	if handle == nil {
-		return nil, errors.New("could not create handle")
+		return nil, ErrHandleCreate
 	}
 
 	C.wrap_set_cb(handle, nil)
 
 	rv := C.semanage_connect(handle)
 	if rv < 0 {
-		return nil, errors.New("could not connect to the SELinux DB")
+		return nil, ErrSELinuxDBConnect
 	}
 
 	return &SeHandler{
@@ -56,7 +88,7 @@ func NewSemanageHandler(logger logr.Logger) (semodule.SEModuleHandler, error) {
 	}, nil
 }
 
-func (sm *SeHandler) getNthModName(n int, modInfoList *C.semanage_module_info_t) (string, func()) {
+func (sm *SeHandler) getNthModName(n int, modInfoList *C.semanage_module_info_t) (module string, cleanup func()) {
 	var modInfo *C.semanage_module_info_t
 	free := func() {}
 
@@ -83,12 +115,15 @@ func (sm *SeHandler) List() ([]string, error) {
 	var cNmod C.int
 
 	if sm.handle == nil {
-		return nil, errors.New("nil handle")
+		return nil, ErrNilHandle
 	}
 
+	// NOTE(jaosorior): I actually don't understand the warning
+	// gocritic is issuing here...
+	// nolint:gocritic
 	rv := C.semanage_module_list(sm.handle, &modInfoList, &cNmod)
 	if rv < 0 {
-		return nil, errors.New("cannot list")
+		return nil, ErrList
 	}
 	defer C.free(unsafe.Pointer(modInfoList))
 
@@ -109,7 +144,7 @@ func (sm *SeHandler) List() ([]string, error) {
 
 func (sm *SeHandler) Remove(moduleName string) error {
 	if sm.handle == nil {
-		return errors.New("nil handle")
+		return ErrNilHandle
 	}
 
 	cModName := C.CString(moduleName)
@@ -117,7 +152,7 @@ func (sm *SeHandler) Remove(moduleName string) error {
 
 	rv := C.semanage_module_remove(sm.handle, cModName)
 	if rv < 0 {
-		return fmt.Errorf("cannot remove module %s", moduleName)
+		return NewErrCannotRemoveModule(moduleName)
 	}
 
 	return sm.commit()
@@ -125,7 +160,7 @@ func (sm *SeHandler) Remove(moduleName string) error {
 
 func (sm *SeHandler) Install(moduleFile string) error {
 	if sm.handle == nil {
-		return errors.New("nil handle")
+		return ErrNilHandle
 	}
 
 	cModFile := C.CString(moduleFile)
@@ -133,7 +168,7 @@ func (sm *SeHandler) Install(moduleFile string) error {
 
 	rv := C.semanage_module_install_file(sm.handle, cModFile)
 	if rv < 0 {
-		return fmt.Errorf("cannot install module %s", moduleFile)
+		return NewErrCannotInstallModule(moduleFile)
 	}
 
 	return sm.commit()
@@ -141,12 +176,12 @@ func (sm *SeHandler) Install(moduleFile string) error {
 
 func (sm *SeHandler) commit() error {
 	if sm.handle == nil {
-		return errors.New("nil handle")
+		return ErrNilHandle
 	}
 
 	rv := C.semanage_commit(sm.handle)
 	if rv < 0 {
-		return fmt.Errorf("Couldn't commit changes to policy. Error: %d", rv)
+		return NewErrCommit(int(rv))
 	}
 
 	return nil

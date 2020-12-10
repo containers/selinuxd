@@ -1,12 +1,19 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 )
 
+var ErrInvalidPath = errors.New("invalid path")
+
+func NewErrInvalidPath(path string) error {
+	return fmt.Errorf("%w: %s", ErrInvalidPath, path)
+}
+
 func GetFileWithoutExtension(filename string) string {
-	var extension = filepath.Ext(filename)
+	extension := filepath.Ext(filename)
 	return filename[0 : len(filename)-len(extension)]
 }
 
@@ -14,7 +21,7 @@ func GetCleanBase(path string) (string, error) {
 	// NOTE: don't trust the path even if it came from fsnotify
 	cleanPath := filepath.Clean(path)
 	if cleanPath == "" {
-		return "", fmt.Errorf("Invalid path: %s", path)
+		return "", NewErrInvalidPath(path)
 	}
 
 	// NOTE: Still not trusting that path. Let's just use the base

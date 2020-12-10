@@ -1,0 +1,19 @@
+name: verify
+
+on: [push, pull_request]
+
+jobs:
+  build-selinuxd:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        centos: ["8"]
+    container:
+      image: centos:${{ matrix.centos }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: install packages
+        run: yum -y --enablerepo=powertools install golang make libsemanage-devel diffutils
+      - name: run verify
+        run: |
+          make verify

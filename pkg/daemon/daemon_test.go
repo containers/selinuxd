@@ -14,14 +14,21 @@ import (
 	"testing"
 	"time"
 
-	backoff "github.com/cenkalti/backoff/v4"
-	"go.uber.org/zap"
-
 	"github.com/JAORMX/selinuxd/pkg/semodule/test"
+	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/go-logr/zapr"
+	"go.uber.org/zap"
 )
 
-const oneSec = 1 * time.Second
+const (
+	defaultPollBackOff = 1 * time.Second
+	defaultTimeout     = 10 * time.Second
+)
+
+var (
+	errModuleNotInstalled = fmt.Errorf("the module wasn't installed")
+	errModuleInstalled    = fmt.Errorf("the module was installed when it shouldn't")
+)
 
 func installPolicy(module, path string, t *testing.T) io.Closer {
 	moduleFileName := module + ".cil"
@@ -42,9 +49,13 @@ func removePolicy(module, path string, t *testing.T) {
 	}
 }
 
+// nolint:gocognit
 func TestDaemon(t *testing.T) {
 	done := make(chan bool)
-	logger, _ := zap.NewDevelopment()
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		t.Fatalf("Couldn't initialize logger: %s", err)
+	}
 
 	moddir, err := ioutil.TempDir("", "semodtest")
 	if err != nil {
@@ -62,31 +73,33 @@ func TestDaemon(t *testing.T) {
 	config := SelinuxdOptions{
 		StatusServerConfig: StatusServerConfig{
 			Path: sockpath,
-			Uid: os.Getuid(),
-			Gid: os.Getuid(),
+			UID:  os.Getuid(),
+			GID:  os.Getuid(),
 		},
 	}
+
+	moduleName := "test"
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
 
 	sh := test.NewSEModuleTestHandler()
 	go Daemon(&config, moddir, sh, done, zapr.NewLogger(logger))
 
 	t.Run("Module should install a policy", func(t *testing.T) {
-		moduleName := "test"
 		f := installPolicy(moduleName, moddir, t)
 		defer f.Close()
 
 		// Module has to be installed... eventually
 		err := backoff.Retry(func() error {
 			if !sh.IsModuleInstalled(moduleName) {
-				return fmt.Errorf("The module wasn't installed")
+				return errModuleNotInstalled
 			}
 			return nil
-		}, backoff.WithMaxRetries(backoff.NewConstantBackOff(oneSec), 5))
+		}, backoff.WithMaxRetries(backoff.NewConstantBackOff(defaultPollBackOff), 5))
 		if err != nil {
 			t.Fatalf("%s", err)
 		}
 	})
-
 
 	t.Run("Sending a GET to the socket's /policies/ path should list modules", func(t *testing.T) {
 		httpc := http.Client{
@@ -96,8 +109,12 @@ func TestDaemon(t *testing.T) {
 				},
 			},
 		}
+		req, err := http.NewRequestWithContext(ctx, "GET", "http://unix/policies/", nil)
+		if err != nil {
+			t.Fatalf("failed getting request: %s", err)
+		}
 
-		response, err := httpc.Get("http://unix/policies/")
+		response, err := httpc.Do(req)
 		if err != nil {
 			t.Fatalf("GET error on the socket: %s", err)
 		}
@@ -120,16 +137,15 @@ func TestDaemon(t *testing.T) {
 
 	t.Run("Module should remove a policy", func(t *testing.T) {
 		// We use the previously installed module
-		moduleName := "test"
 		removePolicy(moduleName, moddir, t)
 
 		// Module has to be installed... eventually
 		err := backoff.Retry(func() error {
 			if sh.IsModuleInstalled(moduleName) {
-				return fmt.Errorf("The module was installed when it shouldn't")
+				return errModuleInstalled
 			}
 			return nil
-		}, backoff.WithMaxRetries(backoff.NewConstantBackOff(oneSec), 5))
+		}, backoff.WithMaxRetries(backoff.NewConstantBackOff(defaultPollBackOff), 5))
 		if err != nil {
 			t.Fatalf("%s", err)
 		}
@@ -141,7 +157,7 @@ func TestDaemon(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if fi.Mode() & os.ModeSocket == 0 {
+		if fi.Mode()&os.ModeSocket == 0 {
 			t.Fatal("not a socket")
 		}
 
