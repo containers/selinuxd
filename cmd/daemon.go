@@ -45,6 +45,35 @@ to quickly create a Cobra application.`,
 
 func init() {
 	rootCmd.AddCommand(daemonCmd)
+	defineFlags(daemonCmd)
+}
+
+func defineFlags(rootCmd *cobra.Command) {
+	rootCmd.Flags().String("socket-path", "", "The path to the socket to listen at")
+	rootCmd.Flags().Int("socket-uid", 0, "The user owner of the status HTTP socket")
+	rootCmd.Flags().Int("socket-gid", 0, "The group owner of the status HTTP socket")
+}
+
+func parseFlags(rootCmd *cobra.Command) (*daemon.SelinuxdOptions, error) {
+	var config daemon.SelinuxdOptions
+	var err error
+
+	config.Uid, err = rootCmd.Flags().GetInt("socket-uid")
+	if err != nil {
+		return nil, err
+	}
+
+	config.Gid, err = rootCmd.Flags().GetInt("socket-gid")
+	if err != nil {
+		return nil, err
+	}
+
+	config.Path, err = rootCmd.Flags().GetString("socket-path")
+	if err != nil {
+		return nil, err
+	}
+
+	return &config, nil
 }
 
 func getLogger() logr.Logger {
@@ -53,8 +82,14 @@ func getLogger() logr.Logger {
 	return zapr.NewLogger(logger)
 }
 
-func daemonCmdFunc(cmd *cobra.Command, args []string) {
+func daemonCmdFunc(rootCmd *cobra.Command, _ []string) {
 	const modulePath = "/etc/selinux.d"
+
+	options, err := parseFlags(rootCmd)
+	if err != nil {
+		log.Fatal(err)
+		syscall.Exit(1)
+	}
 
 	logger := getLogger()
 	exitSignal := make(chan os.Signal, 1)
@@ -67,7 +102,7 @@ func daemonCmdFunc(cmd *cobra.Command, args []string) {
 	}
 	defer sh.Close()
 
-	go daemon.Daemon(modulePath, sh, done, logger)
+	go daemon.Daemon(options, modulePath, sh, done, logger)
 
 	<-exitSignal
 	logger.Info("Exit signal received")

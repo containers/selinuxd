@@ -10,7 +10,11 @@ import (
 	"gopkg.in/fsnotify.v1"
 )
 
-func Daemon(modulePath string, sh semodule.SEModuleHandler, done chan bool, logger logr.Logger) {
+type SelinuxdOptions struct {
+	StatusServerConfig
+}
+
+func Daemon(options *SelinuxdOptions, modulePath string, sh semodule.SEModuleHandler, done chan bool, logger logr.Logger) {
 	policyops := make(chan policyAction)
 
 	logger.Info("Started daemon")
@@ -25,6 +29,8 @@ func Daemon(modulePath string, sh semodule.SEModuleHandler, done chan bool, logg
 	go watchFiles(watcher, policyops, logger)
 
 	go installPolicies(modulePath, sh, policyops, logger)
+
+	go serveState(options.StatusServerConfig, sh, logger)
 
 	// NOTE(jaosorior): We do this before adding the path to the notification
 	// watcher so all the policies are installed already when we start watching
