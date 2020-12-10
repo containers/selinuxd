@@ -3,20 +3,23 @@ package daemon
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/JAORMX/selinuxd/pkg/semodule"
-	"github.com/go-logr/logr"
 	"net"
 	"net/http"
 	"os"
+
+	"github.com/JAORMX/selinuxd/pkg/semodule"
+	"github.com/go-logr/logr"
 )
 
-const unixSockAddr = "/var/run/selinuxd.sock"
-const unixSockMode = 0660
+const (
+	unixSockAddr = "/var/run/selinuxd.sock"
+	unixSockMode = 0660
+)
 
 type StatusServerConfig struct {
 	Path string
-	Uid int
-	Gid int
+	UID  int
+	GID  int
 }
 
 func createSocket(path string, uid, gid int) (net.Listener, error) {
@@ -42,16 +45,16 @@ func createSocket(path string, uid, gid int) (net.Listener, error) {
 	return listener, nil
 }
 
-func serveState(config StatusServerConfig, sh semodule.SEModuleHandler, logger logr.Logger) {
+func serveState(config StatusServerConfig, sh semodule.Handler, logger logr.Logger) {
 	slog := logger.WithName("state-server")
 
 	if config.Path == "" {
 		config.Path = unixSockAddr
 	}
 
-	slog.Info("Serving status", "path", config.Path, "uid", config.Uid, "gid", config.Gid)
+	slog.Info("Serving status", "path", config.Path, "uid", config.UID, "gid", config.GID)
 
-	listener, err := createSocket(config.Path, config.Uid, config.Gid)
+	listener, err := createSocket(config.Path, config.UID, config.GID)
 	if err != nil {
 		slog.Error(err, "error setting up socket")
 		// TODO: jhrozek: signal exit
@@ -71,12 +74,17 @@ func serveState(config StatusServerConfig, sh semodule.SEModuleHandler, logger l
 			return
 		}
 
-		json.NewEncoder(w).Encode(modules)
+		err = json.NewEncoder(w).Encode(modules)
+		if err != nil {
+			slog.Error(err, "error writing list response")
+		}
 	}
 
 	mux.HandleFunc("/policies/", policiesHandler)
 	server := &http.Server{
 		Handler: mux,
 	}
-    server.Serve(listener)
+	if err := server.Serve(listener); err != nil {
+		slog.Info("Server shutting down: %s", err)
+	}
 }

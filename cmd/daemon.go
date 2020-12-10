@@ -16,18 +16,17 @@ limitations under the License.
 package cmd
 
 import (
-	"log"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/JAORMX/selinuxd/pkg/daemon"
+	"github.com/JAORMX/selinuxd/pkg/semodule/semanage"
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
-
-	"github.com/JAORMX/selinuxd/pkg/daemon"
-	"github.com/JAORMX/selinuxd/pkg/semodule/semanage"
 )
 
 // daemonCmd represents the daemon command
@@ -43,6 +42,7 @@ to quickly create a Cobra application.`,
 	Run: daemonCmdFunc,
 }
 
+// nolint:gochecknoinits
 func init() {
 	rootCmd.AddCommand(daemonCmd)
 	defineFlags(daemonCmd)
@@ -58,47 +58,58 @@ func parseFlags(rootCmd *cobra.Command) (*daemon.SelinuxdOptions, error) {
 	var config daemon.SelinuxdOptions
 	var err error
 
-	config.Uid, err = rootCmd.Flags().GetInt("socket-uid")
+	config.UID, err = rootCmd.Flags().GetInt("socket-uid")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed getting socket-uid flag: %w", err)
 	}
 
-	config.Gid, err = rootCmd.Flags().GetInt("socket-gid")
+	config.GID, err = rootCmd.Flags().GetInt("socket-gid")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed getting socket-gid flag: %w", err)
 	}
 
 	config.Path, err = rootCmd.Flags().GetString("socket-path")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed getting socket-path flag: %w", err)
 	}
 
 	return &config, nil
 }
 
-func getLogger() logr.Logger {
-	logger, _ := zap.NewProduction()
+func getLogger() (logr.Logger, error) {
+	logger, err := zap.NewProduction()
+	if err != nil {
+		return nil, fmt.Errorf("error creating logger: %w", err)
+	}
+	logIf := zapr.NewLogger(logger)
+	// NOTE(jaosorior): While this may return errors, they're mostly
+	// harmless and handling them is more work than its worth
+	// nolint:errcheck
 	defer logger.Sync() // flushes buffer, if any
-	return zapr.NewLogger(logger)
+	return logIf, nil
 }
 
 func daemonCmdFunc(rootCmd *cobra.Command, _ []string) {
 	const modulePath = "/etc/selinux.d"
-
-	options, err := parseFlags(rootCmd)
+	logger, err := getLogger()
 	if err != nil {
-		log.Fatal(err)
+		fmt.Fprintf(os.Stderr, "%s", err)
 		syscall.Exit(1)
 	}
 
-	logger := getLogger()
+	options, err := parseFlags(rootCmd)
+	if err != nil {
+		logger.Error(err, "Parsing flags")
+		syscall.Exit(1)
+	}
+
 	exitSignal := make(chan os.Signal, 1)
 	done := make(chan bool)
 	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
 
 	sh, err := semanage.NewSemanageHandler(logger)
 	if err != nil {
-		log.Fatal(err)
+		logger.Error(err, "Creating semanage handler")
 	}
 	defer sh.Close()
 

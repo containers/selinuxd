@@ -19,9 +19,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/cobra"
-
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
@@ -51,6 +50,7 @@ func Execute() {
 	}
 }
 
+// nolint:gochecknoinits
 func init() {
 	cobra.OnInitialize(initConfig)
 

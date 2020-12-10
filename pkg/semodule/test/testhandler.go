@@ -9,15 +9,19 @@ type SEModuleTestHandler struct {
 	modules []string
 }
 
-// Ensure that the test handler implements the SEModuleHandler interface
-var _ semodule.SEModuleHandler = &SEModuleTestHandler{}
+// Ensure that the test handler implements the Handler interface
+var _ semodule.Handler = &SEModuleTestHandler{}
 
 func NewSEModuleTestHandler() *SEModuleTestHandler {
 	return &SEModuleTestHandler{}
 }
 
 func (smt *SEModuleTestHandler) Install(modulePath string) error {
-	baseFile, _ := utils.GetCleanBase(modulePath)
+	baseFile, err := utils.GetCleanBase(modulePath)
+	if err != nil {
+		// nolint:wrapcheck
+		return err
+	}
 	module := utils.GetFileWithoutExtension(baseFile)
 	// Only install module if it's not already there.
 	if smt.IsModuleInstalled(module) {
@@ -42,6 +46,7 @@ func (smt *SEModuleTestHandler) List() ([]string, error) {
 	// Return a copy
 	return append([]string(nil), smt.modules...), nil
 }
+
 func (smt *SEModuleTestHandler) Remove(modToRemove string) error {
 	idToRemove := -1
 	for id, mod := range smt.modules {
@@ -53,6 +58,7 @@ func (smt *SEModuleTestHandler) Remove(modToRemove string) error {
 	smt.modules = append(smt.modules[:idToRemove], smt.modules[idToRemove+1:]...)
 	return nil
 }
+
 func (smt *SEModuleTestHandler) Close() error {
 	return nil
 }
