@@ -13,6 +13,14 @@ ifeq ($(OS_NAME), Darwin)
 endif
 GOLANGCI_LINT_URL=https://github.com/golangci/golangci-lint/releases/download/v$(GOLANGCI_LINT_VERSION)/golangci-lint-$(GOLANGCI_LINT_VERSION)-$(GOLANGCI_LINT_OS)-amd64.tar.gz
 
+CONTAINTER_RUNTIME?=podman
+
+IMAGE_NAME=selinuxd
+IMAGE_TAG=latest
+
+IMAGE_REF=$(IMAGE_NAME):$(IMAGE_TAG)
+
+IMAGE_REPO?=quay.io/jaosorior/$(IMAGE_REF)
 
 # Targets
 
@@ -32,6 +40,15 @@ test:
 .PHONY: run
 run: $(BIN) $(POLICYDIR)
 	sudo $(BIN) daemon
+
+.PHONY: runc
+runc: image $(POLICYDIR)
+	sudo $(CONTAINTER_RUNTIME) run -ti \
+		--privileged \
+		-v /sys/fs/selinux:/sys/fs/selinux \
+		-v /var/lib/selinux:/var/lib/selinux \
+		-v /etc/selinux.d:/etc/selinux.d \
+		$(IMAGE_REPO) daemon
 
 $(BINDIR):
 	mkdir -p $(BINDIR)
@@ -60,3 +77,11 @@ $(GOPATH)/bin/golangci-lint:
 		(echo "curl returned $$? trying to fetch golangci-lint. please install golangci-lint and try again"; exit 1); \
 	GOLANGCI_LINT_CACHE=/tmp/golangci-cache $(GOPATH)/bin/golangci-lint version
 	GOLANGCI_LINT_CACHE=/tmp/golangci-cache $(GOPATH)/bin/golangci-lint linters
+
+.PHONY: image
+image:
+	$(CONTAINTER_RUNTIME) build -t $(IMAGE_REPO) .
+
+.PHONY: push
+push:
+	$(CONTAINTER_RUNTIME) push $(IMAGE_REPO)
