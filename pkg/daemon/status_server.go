@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"os"
 
 	"github.com/JAORMX/selinuxd/pkg/semodule"
@@ -17,9 +18,10 @@ const (
 )
 
 type StatusServerConfig struct {
-	Path string
-	UID  int
-	GID  int
+	Path            string
+	UID             int
+	GID             int
+	EnableProfiling bool
 }
 
 func createSocket(path string, uid, gid int) (net.Listener, error) {
@@ -81,6 +83,13 @@ func serveState(config StatusServerConfig, sh semodule.Handler, logger logr.Logg
 	}
 
 	mux.HandleFunc("/policies/", policiesHandler)
+	if config.EnableProfiling {
+		mux.HandleFunc("/debug/pprof/", pprof.Index)
+		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	}
 	server := &http.Server{
 		Handler: mux,
 	}
