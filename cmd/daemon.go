@@ -23,10 +23,7 @@ import (
 
 	"github.com/JAORMX/selinuxd/pkg/daemon"
 	"github.com/JAORMX/selinuxd/pkg/semodule/semanage"
-	"github.com/go-logr/logr"
-	"github.com/go-logr/zapr"
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
 )
 
 // daemonCmd represents the daemon command
@@ -76,21 +73,7 @@ func parseFlags(rootCmd *cobra.Command) (*daemon.SelinuxdOptions, error) {
 	return &config, nil
 }
 
-func getLogger() (logr.Logger, error) {
-	logger, err := zap.NewProduction()
-	if err != nil {
-		return nil, fmt.Errorf("error creating logger: %w", err)
-	}
-	logIf := zapr.NewLogger(logger)
-	// NOTE(jaosorior): While this may return errors, they're mostly
-	// harmless and handling them is more work than its worth
-	// nolint:errcheck
-	defer logger.Sync() // flushes buffer, if any
-	return logIf, nil
-}
-
 func daemonCmdFunc(rootCmd *cobra.Command, _ []string) {
-	const modulePath = "/etc/selinux.d"
 	logger, err := getLogger()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s", err)
@@ -113,7 +96,7 @@ func daemonCmdFunc(rootCmd *cobra.Command, _ []string) {
 	}
 	defer sh.Close()
 
-	go daemon.Daemon(options, modulePath, sh, done, logger)
+	go daemon.Daemon(options, defaultModulePath, sh, done, logger)
 
 	<-exitSignal
 	logger.Info("Exit signal received")

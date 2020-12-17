@@ -7,7 +7,7 @@ import (
 	"github.com/JAORMX/selinuxd/pkg/utils"
 )
 
-type policyAction interface {
+type PolicyAction interface {
 	String() string
 	do(modulePath string, sh semodule.Handler) (string, error)
 }
@@ -18,7 +18,7 @@ type policyInstall struct {
 }
 
 // newInstallAction will execute the "install" action for a policy.
-func newInstallAction(path string) policyAction {
+func newInstallAction(path string) PolicyAction {
 	return &policyInstall{path}
 }
 
@@ -42,7 +42,7 @@ type policyRemove struct {
 }
 
 // newInstallAction will execute the "remove" action for a policy.
-func newRemoveAction(path string) policyAction {
+func newRemoveAction(path string) PolicyAction {
 	return &policyRemove{path}
 }
 

@@ -20,7 +20,7 @@ type SelinuxdOptions struct {
 // * `sh`: is the SELinux module handler interface.
 // * `l`: is a logger interface.
 func Daemon(opts *SelinuxdOptions, mPath string, sh semodule.Handler, done chan bool, l logr.Logger) {
-	policyops := make(chan policyAction)
+	policyops := make(chan PolicyAction)
 
 	l.Info("Started daemon")
 
@@ -33,14 +33,14 @@ func Daemon(opts *SelinuxdOptions, mPath string, sh semodule.Handler, done chan 
 	// TODO(jaosorior): Enable multiple watchers
 	go watchFiles(watcher, policyops, l)
 
-	go installPolicies(mPath, sh, policyops, l)
+	go InstallPolicies(mPath, sh, policyops, l)
 
 	go serveState(opts.StatusServerConfig, sh, l)
 
 	// NOTE(jaosorior): We do this before adding the path to the notification
 	// watcher so all the policies are installed already when we start watching
 	// for events.
-	if err := installPoliciesInDir(mPath, policyops); err != nil {
+	if err := InstallPoliciesInDir(mPath, policyops); err != nil {
 		l.Error(err, "Installing policies in module directory")
 	}
 
@@ -52,7 +52,7 @@ func Daemon(opts *SelinuxdOptions, mPath string, sh semodule.Handler, done chan 
 	<-done
 }
 
-func watchFiles(watcher *fsnotify.Watcher, policyops chan policyAction, logger logr.Logger) {
+func watchFiles(watcher *fsnotify.Watcher, policyops chan PolicyAction, logger logr.Logger) {
 	fwlog := logger.WithName("file-watcher")
 	for {
 		select {
@@ -79,12 +79,12 @@ func watchFiles(watcher *fsnotify.Watcher, policyops chan policyAction, logger l
 	}
 }
 
-func installPolicies(modulePath string, sh semodule.Handler, policyops chan policyAction, logger logr.Logger) {
+func InstallPolicies(modulePath string, sh semodule.Handler, policyops chan PolicyAction, logger logr.Logger) {
 	ilog := logger.WithName("policy-installer")
 	for {
 		action, ok := <-policyops
 		if !ok {
-			ilog.Info("WARNING: the actions channel has been closed or is empty")
+			ilog.Info("The policy operations channel is now closed")
 			return // TODO(jaosorior): Actually signal exit
 		}
 		if actionOut, err := action.do(modulePath, sh); err != nil {
@@ -99,7 +99,7 @@ func installPolicies(modulePath string, sh semodule.Handler, policyops chan poli
 	}
 }
 
-func installPoliciesInDir(mpath string, policyops chan policyAction) error {
+func InstallPoliciesInDir(mpath string, policyops chan PolicyAction) error {
 	return filepath.Walk(mpath, func(path string, info os.FileInfo, err error) error {
 		if info == nil || info.IsDir() {
 			return nil
