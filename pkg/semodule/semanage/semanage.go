@@ -52,7 +52,7 @@ func NewErrCannotInstallModule(mName string) error {
 }
 
 func NewErrCommit(origErrVal int) error {
-	return fmt.Errorf("%w - error code: %d", ErrCannotInstallModule, origErrVal)
+	return fmt.Errorf("%w - error code: %d", ErrCommit, origErrVal)
 }
 
 //export LogWrapper
