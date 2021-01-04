@@ -88,26 +88,20 @@ func NewSemanageHandler(logger logr.Logger) (semodule.Handler, error) {
 	}, nil
 }
 
-func (sm *SeHandler) getNthModName(n int, modInfoList *C.semanage_module_info_t) (module string, cleanup func()) {
-	var modInfo *C.semanage_module_info_t
-	free := func() {}
-
-	modInfo = C.semanage_module_list_nth(modInfoList, C.int(n))
+func (sm *SeHandler) getNthModName(n int, modInfoList *C.semanage_module_info_t) string {
+	modInfo := C.semanage_module_list_nth(modInfoList, C.int(n))
 	if modInfo == nil {
-		return "", free
+		return ""
 	}
-
-	free = func() {
-		C.semanage_module_info_destroy(sm.handle, modInfo)
-	}
+	defer C.semanage_module_info_destroy(sm.handle, modInfo)
 
 	// no free seems to be required, this returns a const char
 	cName := C.semanage_module_get_name(modInfo)
 	if cName == nil {
-		return "", free
+		return ""
 	}
 
-	return C.GoString(cName), free
+	return C.GoString(cName)
 }
 
 func (sm *SeHandler) List() ([]string, error) {
@@ -131,8 +125,7 @@ func (sm *SeHandler) List() ([]string, error) {
 	modNames := make([]string, 0)
 
 	for n := 0; n < nmod; n++ {
-		name, freeModInfo := sm.getNthModName(n, modInfoList)
-		defer freeModInfo()
+		name := sm.getNthModName(n, modInfoList)
 		if name == "" {
 			continue
 		}
