@@ -49,6 +49,7 @@ func defineFlags(rootCmd *cobra.Command) {
 	rootCmd.Flags().String("socket-path", "", "The path to the socket to listen at")
 	rootCmd.Flags().Int("socket-uid", 0, "The user owner of the status HTTP socket")
 	rootCmd.Flags().Int("socket-gid", 0, "The group owner of the status HTTP socket")
+	rootCmd.Flags().Bool("enable-profiling", false, "whether to enable or not profiling endpoints in the status server.")
 }
 
 func parseFlags(rootCmd *cobra.Command) (*daemon.SelinuxdOptions, error) {
@@ -68,6 +69,11 @@ func parseFlags(rootCmd *cobra.Command) (*daemon.SelinuxdOptions, error) {
 	config.Path, err = rootCmd.Flags().GetString("socket-path")
 	if err != nil {
 		return nil, fmt.Errorf("failed getting socket-path flag: %w", err)
+	}
+
+	config.EnableProfiling, err = rootCmd.Flags().GetBool("enable-profiling")
+	if err != nil {
+		return nil, fmt.Errorf("failed getting enable-profiling flag: %w", err)
 	}
 
 	return &config, nil
