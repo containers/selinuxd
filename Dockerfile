@@ -28,7 +28,7 @@ ADD . /work
 
 RUN make
 
-FROM registry.centos.org/centos:8 AS build
+FROM registry.centos.org/centos:8
 # TODO(jaosorior): Switch to UBI once we use static linking
 #FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
