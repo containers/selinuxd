@@ -21,6 +21,7 @@ import (
 	"syscall"
 
 	"github.com/JAORMX/selinuxd/pkg/daemon"
+	"github.com/JAORMX/selinuxd/pkg/datastore"
 	"github.com/JAORMX/selinuxd/pkg/semodule/semanage"
 	"github.com/spf13/cobra"
 )
@@ -36,6 +37,23 @@ var oneshotCmd = &cobra.Command{
 // nolint:gochecknoinits
 func init() {
 	rootCmd.AddCommand(oneshotCmd)
+	defineOneShotFlags(oneshotCmd)
+}
+
+func defineOneShotFlags(rootCmd *cobra.Command) {
+	rootCmd.Flags().String("datastore-path", datastore.DefaultDataStorePath, "The path to the policy data store")
+}
+
+func parseOneShotFlags(rootCmd *cobra.Command) (*daemon.SelinuxdOptions, error) {
+	var config daemon.SelinuxdOptions
+	var err error
+
+	config.StatusDBPath, err = rootCmd.Flags().GetString("datastore-path")
+	if err != nil {
+		return nil, fmt.Errorf("failed getting datastore-path flag: %w", err)
+	}
+
+	return &config, nil
 }
 
 func oneshotCmdFunc(rootCmd *cobra.Command, _ []string) {
@@ -45,11 +63,23 @@ func oneshotCmdFunc(rootCmd *cobra.Command, _ []string) {
 		syscall.Exit(1)
 	}
 
+	opts, err := parseOneShotFlags(rootCmd)
+	if err != nil {
+		logger.Error(err, "Parsing flags")
+		syscall.Exit(1)
+	}
+
 	sh, err := semanage.NewSemanageHandler(logger)
 	if err != nil {
 		logger.Error(err, "Creating semanage handler")
 	}
 	defer sh.Close()
+
+	ds, err := datastore.New(opts.StatusDBPath)
+	if err != nil {
+		logger.Error(err, "Unable to get R/W datastore")
+	}
+	defer ds.Close()
 
 	policyops := make(chan daemon.PolicyAction)
 
@@ -62,7 +92,7 @@ func oneshotCmdFunc(rootCmd *cobra.Command, _ []string) {
 		close(policyops)
 	}()
 
-	daemon.InstallPolicies(defaultModulePath, sh, policyops, logger)
+	daemon.InstallPolicies(defaultModulePath, sh, ds, policyops, logger)
 
 	logger.Info("Done installing policies in directory")
 }

@@ -8,13 +8,13 @@ import (
 	"net/http/pprof"
 	"os"
 
-	"github.com/JAORMX/selinuxd/pkg/semodule"
+	"github.com/JAORMX/selinuxd/pkg/datastore"
 	"github.com/go-logr/logr"
 )
 
 const (
-	unixSockAddr = "/var/run/selinuxd.sock"
-	unixSockMode = 0660
+	DefaultUnixSockAddr = "/var/run/selinuxd.sock"
+	unixSockMode        = 0660
 )
 
 type StatusServerConfig struct {
@@ -47,11 +47,11 @@ func createSocket(path string, uid, gid int) (net.Listener, error) {
 	return listener, nil
 }
 
-func serveState(config StatusServerConfig, sh semodule.Handler, logger logr.Logger) {
+func serveState(config StatusServerConfig, ds datastore.ReadOnlyDataStore, logger logr.Logger) {
 	slog := logger.WithName("state-server")
 
 	if config.Path == "" {
-		config.Path = unixSockAddr
+		config.Path = DefaultUnixSockAddr
 	}
 
 	slog.Info("Serving status", "path", config.Path, "uid", config.UID, "gid", config.GID)
@@ -70,7 +70,7 @@ func serveState(config StatusServerConfig, sh semodule.Handler, logger logr.Logg
 			return
 		}
 
-		modules, err := sh.List()
+		modules, err := ds.List()
 		if err != nil {
 			http.Error(w, "Cannot list modules", http.StatusInternalServerError)
 			return

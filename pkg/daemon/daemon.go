@@ -1,10 +1,10 @@
 package daemon
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/JAORMX/selinuxd/pkg/datastore"
 	"github.com/JAORMX/selinuxd/pkg/semodule"
 	"github.com/go-logr/logr"
 	"gopkg.in/fsnotify.v1"
@@ -12,6 +12,7 @@ import (
 
 type SelinuxdOptions struct {
 	StatusServerConfig
+	StatusDBPath string
 }
 
 // Daemon takes the following parameters:
@@ -23,19 +24,26 @@ func Daemon(opts *SelinuxdOptions, mPath string, sh semodule.Handler, done chan 
 	policyops := make(chan PolicyAction)
 
 	l.Info("Started daemon")
+	ds, err := datastore.New(opts.StatusDBPath)
+	if err != nil {
+		l.Error(err, "Unable to get R/W datastore")
+		panic(err)
+	}
+	defer ds.Close()
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Fatal(err)
+		l.Error(err, "Unable to get fsnotify watcher")
+		panic(err)
 	}
 	defer watcher.Close()
 
 	// TODO(jaosorior): Enable multiple watchers
 	go watchFiles(watcher, policyops, l)
 
-	go InstallPolicies(mPath, sh, policyops, l)
+	go InstallPolicies(mPath, sh, ds, policyops, l)
 
-	go serveState(opts.StatusServerConfig, sh, l)
+	go serveState(opts.StatusServerConfig, ds.GetReadOnly(), l)
 
 	// NOTE(jaosorior): We do this before adding the path to the notification
 	// watcher so all the policies are installed already when we start watching
@@ -79,7 +87,9 @@ func watchFiles(watcher *fsnotify.Watcher, policyops chan PolicyAction, logger l
 	}
 }
 
-func InstallPolicies(modulePath string, sh semodule.Handler, policyops chan PolicyAction, logger logr.Logger) {
+// InstallPolicies installs the policies found in the `modulePath` directory
+// nolint: lll
+func InstallPolicies(modulePath string, sh semodule.Handler, ds datastore.DataStore, policyops chan PolicyAction, logger logr.Logger) {
 	ilog := logger.WithName("policy-installer")
 	for {
 		action, ok := <-policyops
@@ -87,7 +97,7 @@ func InstallPolicies(modulePath string, sh semodule.Handler, policyops chan Poli
 			ilog.Info("The policy operations channel is now closed")
 			return // TODO(jaosorior): Actually signal exit
 		}
-		if actionOut, err := action.do(modulePath, sh); err != nil {
+		if actionOut, err := action.do(modulePath, sh, ds); err != nil {
 			ilog.Error(err, "Failed applying operation on policy", "operation", action, "output", actionOut)
 		} else {
 			// TODO(jaosorior): Replace this log with proper tracking of the installation status
