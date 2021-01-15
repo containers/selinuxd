@@ -63,12 +63,13 @@ func TestDaemon(t *testing.T) {
 	}
 	defer os.RemoveAll(moddir) // clean up
 
-	sockdir, err := ioutil.TempDir("", "selinuxd-sockdir")
+	dir, err := ioutil.TempDir("", "selinuxd")
 	if err != nil {
 		t.Fatalf("Error creating temporary directory: %s", err)
 	}
-	sockpath := sockdir + "/selinuxd.sock"
-	defer os.RemoveAll(sockdir) // clean up
+	sockpath := filepath.Join(dir, "selinuxd.sock")
+	dbpath := filepath.Join(dir, "selinuxd.db")
+	defer os.RemoveAll(dir) // clean up
 
 	config := SelinuxdOptions{
 		StatusServerConfig: StatusServerConfig{
@@ -76,6 +77,7 @@ func TestDaemon(t *testing.T) {
 			UID:  os.Getuid(),
 			GID:  os.Getuid(),
 		},
+		StatusDBPath: dbpath,
 	}
 
 	moduleName := "test"
@@ -148,6 +150,36 @@ func TestDaemon(t *testing.T) {
 		}, backoff.WithMaxRetries(backoff.NewConstantBackOff(defaultPollBackOff), 5))
 		if err != nil {
 			t.Fatalf("%s", err)
+		}
+	})
+
+	t.Run("Sending a GET to the socket's /policies/ path now not show the policy", func(t *testing.T) {
+		httpc := http.Client{
+			Transport: &http.Transport{
+				DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+					return net.Dial("unix", sockpath)
+				},
+			},
+		}
+		req, err := http.NewRequestWithContext(ctx, "GET", "http://unix/policies/", nil)
+		if err != nil {
+			t.Fatalf("failed getting request: %s", err)
+		}
+
+		response, err := httpc.Do(req)
+		if err != nil {
+			t.Fatalf("GET error on the socket: %s", err)
+		}
+		defer response.Body.Close()
+
+		var moduleList []string
+		err = json.NewDecoder(response.Body).Decode(&moduleList)
+		if err != nil {
+			t.Fatalf("cannot decode response: %s", err)
+		}
+
+		if len(moduleList) != 0 {
+			t.Fatalf("expected zero modules, got: %d", len(moduleList))
 		}
 	})
 

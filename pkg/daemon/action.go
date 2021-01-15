@@ -3,13 +3,14 @@ package daemon
 import (
 	"fmt"
 
+	"github.com/JAORMX/selinuxd/pkg/datastore"
 	"github.com/JAORMX/selinuxd/pkg/semodule"
 	"github.com/JAORMX/selinuxd/pkg/utils"
 )
 
 type PolicyAction interface {
 	String() string
-	do(modulePath string, sh semodule.Handler) (string, error)
+	do(modulePath string, sh semodule.Handler, ds datastore.DataStore) (string, error)
 }
 
 // Defines an action to be taken on a policy file on the specified path
@@ -26,13 +27,32 @@ func (pi *policyInstall) String() string {
 	return "install - " + pi.path
 }
 
-func (pi *policyInstall) do(modulePath string, sh semodule.Handler) (string, error) {
+func (pi *policyInstall) do(modulePath string, sh semodule.Handler, ds datastore.DataStore) (string, error) {
+	policyName, err := utils.PolicyNameFromPath(pi.path)
+	if err != nil {
+		return "", fmt.Errorf("installing policy: %w", err)
+	}
 	policyPath, err := utils.GetSafePath(modulePath, pi.path)
 	if err != nil {
 		return "", fmt.Errorf("failed getting a safe path for policy: %w", err)
 	}
-	if err := sh.Install(policyPath); err != nil {
-		return "", fmt.Errorf("failed executing install action: %w", err)
+
+	installErr := sh.Install(policyPath)
+	status := datastore.InstalledStatus
+	var msg string
+
+	if installErr != nil {
+		status = datastore.FailedStatus
+		msg = installErr.Error()
+	}
+
+	puterr := ds.PutStatus(policyName, status, msg)
+	if puterr != nil {
+		return "", fmt.Errorf("failed persisting status in datastore: %w", puterr)
+	}
+
+	if installErr != nil {
+		return "", fmt.Errorf("failed executing install action: %w", installErr)
 	}
 	return "", nil
 }
@@ -50,20 +70,26 @@ func (pi *policyRemove) String() string {
 	return "remove - " + pi.path
 }
 
-func (pi *policyRemove) do(modulePath string, sh semodule.Handler) (string, error) {
+func (pi *policyRemove) do(modulePath string, sh semodule.Handler, ds datastore.DataStore) (string, error) {
 	var policyArg string
-	baseFile, err := utils.GetCleanBase(pi.path)
+	policyArg, err := utils.PolicyNameFromPath(pi.path)
 	if err != nil {
-		return "", fmt.Errorf("failed getting clean base name for policy: %w", err)
+		return "", fmt.Errorf("removing policy: %w", err)
 	}
-	policyArg = utils.GetFileWithoutExtension(baseFile)
 
 	if !pi.moduleInstalled(sh, policyArg) {
+		if err := ds.Remove(policyArg); err != nil {
+			return "Module is not in the system", fmt.Errorf("failed removing policy from datastore: %w", err)
+		}
 		return "No action needed; Module is not in the system", nil
 	}
 
 	if err := sh.Remove(policyArg); err != nil {
 		return "", fmt.Errorf("failed executing remove action: %w", err)
+	}
+
+	if err := ds.Remove(policyArg); err != nil {
+		return "", fmt.Errorf("failed removing policy from datastore: %w", err)
 	}
 	return "", nil
 }

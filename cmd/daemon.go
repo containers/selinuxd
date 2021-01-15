@@ -22,6 +22,7 @@ import (
 	"syscall"
 
 	"github.com/JAORMX/selinuxd/pkg/daemon"
+	"github.com/JAORMX/selinuxd/pkg/datastore"
 	"github.com/JAORMX/selinuxd/pkg/semodule/semanage"
 	"github.com/spf13/cobra"
 )
@@ -46,9 +47,10 @@ func init() {
 }
 
 func defineFlags(rootCmd *cobra.Command) {
-	rootCmd.Flags().String("socket-path", "", "The path to the socket to listen at")
+	rootCmd.Flags().String("socket-path", daemon.DefaultUnixSockAddr, "The path to the socket to listen at")
 	rootCmd.Flags().Int("socket-uid", 0, "The user owner of the status HTTP socket")
 	rootCmd.Flags().Int("socket-gid", 0, "The group owner of the status HTTP socket")
+	rootCmd.Flags().String("datastore-path", datastore.DefaultDataStorePath, "The path to the policy data store")
 	rootCmd.Flags().Bool("enable-profiling", false, "whether to enable or not profiling endpoints in the status server.")
 }
 
@@ -69,6 +71,11 @@ func parseFlags(rootCmd *cobra.Command) (*daemon.SelinuxdOptions, error) {
 	config.Path, err = rootCmd.Flags().GetString("socket-path")
 	if err != nil {
 		return nil, fmt.Errorf("failed getting socket-path flag: %w", err)
+	}
+
+	config.StatusDBPath, err = rootCmd.Flags().GetString("datastore-path")
+	if err != nil {
+		return nil, fmt.Errorf("failed getting datastore-path flag: %w", err)
 	}
 
 	config.EnableProfiling, err = rootCmd.Flags().GetBool("enable-profiling")

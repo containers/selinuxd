@@ -2,19 +2,21 @@ package daemon
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"net/http/pprof"
 	"os"
 
-	"github.com/JAORMX/selinuxd/pkg/semodule"
+	"github.com/JAORMX/selinuxd/pkg/datastore"
 	"github.com/go-logr/logr"
+	"github.com/gorilla/mux"
 )
 
 const (
-	unixSockAddr = "/var/run/selinuxd.sock"
-	unixSockMode = 0660
+	DefaultUnixSockAddr = "/var/run/selinuxd.sock"
+	unixSockMode        = 0660
 )
 
 type StatusServerConfig struct {
@@ -22,6 +24,114 @@ type StatusServerConfig struct {
 	UID             int
 	GID             int
 	EnableProfiling bool
+}
+
+type statusServer struct {
+	cfg StatusServerConfig
+	ds  datastore.ReadOnlyDataStore
+	l   logr.Logger
+}
+
+func newStatusServer(cfg StatusServerConfig, ds datastore.ReadOnlyDataStore, l logr.Logger) *statusServer {
+	if cfg.Path == "" {
+		cfg.Path = DefaultUnixSockAddr
+	}
+
+	ss := &statusServer{cfg, ds, l}
+	return ss
+}
+
+func (ss *statusServer) Serve() error {
+	lst, err := createSocket(ss.cfg.Path, ss.cfg.UID, ss.cfg.GID)
+	if err != nil {
+		ss.l.Error(err, "error setting up socket")
+		// TODO: jhrozek: signal exit
+		return fmt.Errorf("setting up socket: %w", err)
+	}
+
+	r := mux.NewRouter()
+	ss.initializeRoutes(r)
+
+	server := &http.Server{
+		Handler: r,
+	}
+	if err := server.Serve(lst); err != nil {
+		ss.l.Info("Server shutting down: %s", err)
+	}
+	return nil
+}
+
+func (ss *statusServer) initializeRoutes(r *mux.Router) {
+	// /policies/
+	s := r.PathPrefix("/policies").Subrouter()
+	s.HandleFunc("/", ss.listPoliciesHandler).
+		Methods("GET")
+	s.HandleFunc("/", ss.catchAllNotGetHandler)
+	// IMPORTANT(jaosorior): We should better restrict what characters
+	// does this handler accept
+	s.HandleFunc("/{policy}", ss.getPolicyStatusHandler).
+		Methods("GET")
+	s.HandleFunc("/{policy}", ss.catchAllNotGetHandler)
+
+	// /policies -- without the trailing /
+	r.HandleFunc("/policies", ss.listPoliciesHandler).
+		Methods("GET")
+	r.HandleFunc("/policies", ss.catchAllNotGetHandler)
+	r.HandleFunc("/", ss.catchAllHandler)
+
+	if ss.cfg.EnableProfiling {
+		r.HandleFunc("/debug/pprof/", pprof.Index)
+		r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		r.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	}
+}
+
+func (ss *statusServer) listPoliciesHandler(w http.ResponseWriter, r *http.Request) {
+	modules, err := ss.ds.List()
+	if err != nil {
+		http.Error(w, "Cannot list modules", http.StatusInternalServerError)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(modules)
+	if err != nil {
+		ss.l.Error(err, "error writing list response")
+		http.Error(w, "Cannot list modules", http.StatusInternalServerError)
+	}
+}
+
+func (ss *statusServer) getPolicyStatusHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	policy := vars["policy"]
+	status, msg, err := ss.ds.GetStatus(policy)
+	if errors.Is(err, datastore.ErrPolicyNotFound) {
+		http.Error(w, "couldn't find requested policy", http.StatusNotFound)
+		return
+	} else if err != nil {
+		ss.l.Error(err, "error getting status")
+		http.Error(w, "Cannot get status", http.StatusInternalServerError)
+		return
+	}
+
+	output := map[string]string{
+		"status": string(status),
+		"msg":    msg,
+	}
+	err = json.NewEncoder(w).Encode(output)
+	if err != nil {
+		ss.l.Error(err, "error writing status response")
+		http.Error(w, "Cannot get status", http.StatusInternalServerError)
+	}
+}
+
+func (ss *statusServer) catchAllHandler(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, "Invalid path", http.StatusBadRequest)
+}
+
+func (ss *statusServer) catchAllNotGetHandler(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, "Only GET is allowed", http.StatusBadRequest)
 }
 
 func createSocket(path string, uid, gid int) (net.Listener, error) {
@@ -47,53 +157,14 @@ func createSocket(path string, uid, gid int) (net.Listener, error) {
 	return listener, nil
 }
 
-func serveState(config StatusServerConfig, sh semodule.Handler, logger logr.Logger) {
+func serveState(config StatusServerConfig, ds datastore.ReadOnlyDataStore, logger logr.Logger) {
 	slog := logger.WithName("state-server")
-
-	if config.Path == "" {
-		config.Path = unixSockAddr
-	}
 
 	slog.Info("Serving status", "path", config.Path, "uid", config.UID, "gid", config.GID)
 
-	listener, err := createSocket(config.Path, config.UID, config.GID)
-	if err != nil {
-		slog.Error(err, "error setting up socket")
-		// TODO: jhrozek: signal exit
-		return
-	}
+	server := newStatusServer(config, ds, logger)
 
-	mux := http.NewServeMux()
-	policiesHandler := func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "" && r.Method != "GET" {
-			http.Error(w, "Only GET is allowed", http.StatusBadRequest)
-			return
-		}
-
-		modules, err := sh.List()
-		if err != nil {
-			http.Error(w, "Cannot list modules", http.StatusInternalServerError)
-			return
-		}
-
-		err = json.NewEncoder(w).Encode(modules)
-		if err != nil {
-			slog.Error(err, "error writing list response")
-		}
-	}
-
-	mux.HandleFunc("/policies/", policiesHandler)
-	if config.EnableProfiling {
-		mux.HandleFunc("/debug/pprof/", pprof.Index)
-		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
-	}
-	server := &http.Server{
-		Handler: mux,
-	}
-	if err := server.Serve(listener); err != nil {
-		slog.Info("Server shutting down: %s", err)
+	if err := server.Serve(); err != nil {
+		slog.Error(err, "Error starting status server")
 	}
 }

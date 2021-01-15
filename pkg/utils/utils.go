@@ -37,3 +37,12 @@ func GetSafePath(modulePath, path string) (string, error) {
 	policyPath := filepath.Join(modulePath, policyFileBase)
 	return policyPath, nil
 }
+
+func PolicyNameFromPath(path string) (string, error) {
+	baseFile, err := GetCleanBase(path)
+	if err != nil {
+		return "", fmt.Errorf("failed getting clean base name for policy: %w", err)
+	}
+	policy := GetFileWithoutExtension(baseFile)
+	return policy, nil
+}
