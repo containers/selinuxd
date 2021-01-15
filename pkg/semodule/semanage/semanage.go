@@ -12,8 +12,10 @@ void wrap_set_cb(semanage_handle_t *handle, void *arg);
 */
 import "C"
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"sync"
 	"unsafe"
 
 	"github.com/go-logr/logr"
@@ -51,8 +53,31 @@ func NewErrCannotInstallModule(mName string) error {
 	return fmt.Errorf("%w: %s", ErrCannotInstallModule, mName)
 }
 
-func NewErrCommit(origErrVal int) error {
-	return fmt.Errorf("%w - error code: %d", ErrCommit, origErrVal)
+func NewErrCommit(origErrVal int, msg string) error {
+	return fmt.Errorf("%w - error code: %d. message: %s", ErrCommit, origErrVal, msg)
+}
+
+type globalErrorFlusher struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+// This is not ideal... but we need this since it's the only way to get
+// the error messages from libsemanage. If libsemanage had a way to specify
+// an error handler per call, this would not be needed.
+var errflush *globalErrorFlusher = &globalErrorFlusher{}
+
+func (f *globalErrorFlusher) write(msg string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.buf.WriteString(msg)
+}
+
+func (f *globalErrorFlusher) flush() string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	defer f.buf.Reset()
+	return f.buf.String()
 }
 
 //export LogWrapper
@@ -61,6 +86,7 @@ func LogWrapper(cmsg *C.char, level C.int) {
 
 	// swtich on the level and do err/fail/info
 	globLogger.Info(msg)
+	errflush.write(msg)
 }
 
 type SeHandler struct {
@@ -173,8 +199,10 @@ func (sm *SeHandler) commit() error {
 	}
 
 	rv := C.semanage_commit(sm.handle)
+	// This ensures that we always flush after commit
+	msg := errflush.flush()
 	if rv < 0 {
-		return NewErrCommit(int(rv))
+		return NewErrCommit(int(rv), msg)
 	}
 
 	return nil
