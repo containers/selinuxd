@@ -103,7 +103,7 @@ func daemonCmdFunc(rootCmd *cobra.Command, _ []string) {
 	done := make(chan bool)
 	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
 
-	sh, err := semanage.NewSemanageHandler(logger)
+	sh, err := semanage.NewSemanageHandler(true, logger)
 	if err != nil {
 		logger.Error(err, "Creating semanage handler")
 	}

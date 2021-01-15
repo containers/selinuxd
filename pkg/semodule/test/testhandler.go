@@ -19,6 +19,9 @@ func NewSEModuleTestHandler() *SEModuleTestHandler {
 	return &SEModuleTestHandler{}
 }
 
+func (smt *SEModuleTestHandler) SetAutoCommit(bool) {
+}
+
 func (smt *SEModuleTestHandler) Install(modulePath string) error {
 	baseFile, err := utils.GetCleanBase(modulePath)
 	if err != nil {
@@ -71,5 +74,9 @@ func (smt *SEModuleTestHandler) Remove(modToRemove string) error {
 }
 
 func (smt *SEModuleTestHandler) Close() error {
+	return nil
+}
+
+func (smt *SEModuleTestHandler) Commit() error {
 	return nil
 }

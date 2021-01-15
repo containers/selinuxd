@@ -22,7 +22,9 @@ import (
 
 	"github.com/JAORMX/selinuxd/pkg/daemon"
 	"github.com/JAORMX/selinuxd/pkg/datastore"
+	"github.com/JAORMX/selinuxd/pkg/semodule"
 	"github.com/JAORMX/selinuxd/pkg/semodule/semanage"
+	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
 )
 
@@ -56,6 +58,19 @@ func parseOneShotFlags(rootCmd *cobra.Command) (*daemon.SelinuxdOptions, error) 
 	return &config, nil
 }
 
+func tryInstallAllPolicies(sh semodule.Handler, ds datastore.DataStore, logger logr.Logger) {
+	policyops := make(chan daemon.PolicyAction)
+
+	go func() {
+		if err := daemon.InstallPoliciesInDir(defaultModulePath, policyops); err != nil {
+			logger.Error(err, "Installing policies in module directory")
+		}
+		close(policyops)
+	}()
+
+	daemon.InstallPolicies(defaultModulePath, sh, ds, policyops, logger)
+}
+
 func oneshotCmdFunc(rootCmd *cobra.Command, _ []string) {
 	logger, err := getLogger()
 	if err != nil {
@@ -69,7 +84,7 @@ func oneshotCmdFunc(rootCmd *cobra.Command, _ []string) {
 		syscall.Exit(1)
 	}
 
-	sh, err := semanage.NewSemanageHandler(logger)
+	sh, err := semanage.NewSemanageHandler(false, logger)
 	if err != nil {
 		logger.Error(err, "Creating semanage handler")
 	}
@@ -81,18 +96,18 @@ func oneshotCmdFunc(rootCmd *cobra.Command, _ []string) {
 	}
 	defer ds.Close()
 
-	policyops := make(chan daemon.PolicyAction)
-
 	logger.Info("Running oneshot command")
 
-	go func() {
-		if err := daemon.InstallPoliciesInDir(defaultModulePath, policyops); err != nil {
-			logger.Error(err, "Installing policies in module directory")
-		}
-		close(policyops)
-	}()
+	tryInstallAllPolicies(sh, ds, logger)
 
-	daemon.InstallPolicies(defaultModulePath, sh, ds, policyops, logger)
+	if err := sh.Commit(); err != nil {
+		logger.Info("Unable to install policies in one commit. " +
+			"This is most likely due to a policy being wrongly formatted. " +
+			"Will attempt to install each policy individually.")
+		// Do longer policy-per-policy install
+		sh.SetAutoCommit(true)
+		tryInstallAllPolicies(sh, ds, logger)
+	}
 
 	logger.Info("Done installing policies in directory")
 }
