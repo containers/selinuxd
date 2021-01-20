@@ -41,6 +41,7 @@ LABEL name="selinuxd" \
 # TODO(jaosorior): Remove once we use static linking
 RUN dnf install -y --disableplugin=subscription-manager \
     --enablerepo=powertools \
+    udica \
     policycoreutils
 
 COPY --from=build /work/bin/selinuxdctl /usr/bin/
