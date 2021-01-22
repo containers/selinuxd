@@ -49,6 +49,24 @@ func removePolicy(module, path string, t *testing.T) {
 	}
 }
 
+func getHTTPClient(sockpath string) *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+				return net.Dial("unix", sockpath)
+			},
+		},
+	}
+}
+
+func getReadyRequest(ctx context.Context, t *testing.T) *http.Request {
+	req, err := http.NewRequestWithContext(ctx, "GET", "http://unix/ready", nil)
+	if err != nil {
+		t.Fatalf("failed getting request: %s", err)
+	}
+	return req
+}
+
 // nolint:gocognit
 func TestDaemon(t *testing.T) {
 	done := make(chan bool)
@@ -70,6 +88,7 @@ func TestDaemon(t *testing.T) {
 	sockpath := filepath.Join(dir, "selinuxd.sock")
 	dbpath := filepath.Join(dir, "selinuxd.db")
 	defer os.RemoveAll(dir) // clean up
+	httpc := getHTTPClient(sockpath)
 
 	config := SelinuxdOptions{
 		StatusServerConfig: StatusServerConfig{
@@ -103,14 +122,26 @@ func TestDaemon(t *testing.T) {
 		}
 	})
 
-	t.Run("Sending a GET to the socket's /policies/ path should list modules", func(t *testing.T) {
-		httpc := http.Client{
-			Transport: &http.Transport{
-				DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-					return net.Dial("unix", sockpath)
-				},
-			},
+	t.Run("Sending a GET to the socket's /ready/ path should return the ready status", func(t *testing.T) {
+		req := getReadyRequest(ctx, t)
+		response, err := httpc.Do(req)
+		if err != nil {
+			t.Fatalf("GET error on the socket: %s", err)
 		}
+		defer response.Body.Close()
+
+		var status map[string]bool
+		err = json.NewDecoder(response.Body).Decode(&status)
+		if err != nil {
+			t.Fatalf("cannot decode response: %s", err)
+		}
+
+		if status["ready"] != true {
+			t.Fatalf("expected 'test' module, got: %t", status["ready"])
+		}
+	})
+
+	t.Run("Sending a GET to the socket's /policies/ path should list modules", func(t *testing.T) {
 		req, err := http.NewRequestWithContext(ctx, "GET", "http://unix/policies/", nil)
 		if err != nil {
 			t.Fatalf("failed getting request: %s", err)
@@ -154,13 +185,6 @@ func TestDaemon(t *testing.T) {
 	})
 
 	t.Run("Sending a GET to the socket's /policies/ path now not show the policy", func(t *testing.T) {
-		httpc := http.Client{
-			Transport: &http.Transport{
-				DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-					return net.Dial("unix", sockpath)
-				},
-			},
-		}
 		req, err := http.NewRequestWithContext(ctx, "GET", "http://unix/policies/", nil)
 		if err != nil {
 			t.Fatalf("failed getting request: %s", err)

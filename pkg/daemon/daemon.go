@@ -22,6 +22,7 @@ type SelinuxdOptions struct {
 // * `l`: is a logger interface.
 func Daemon(opts *SelinuxdOptions, mPath string, sh semodule.Handler, done chan bool, l logr.Logger) {
 	policyops := make(chan PolicyAction)
+	readychan := make(chan bool)
 
 	l.Info("Started daemon")
 	ds, err := datastore.New(opts.StatusDBPath)
@@ -30,6 +31,14 @@ func Daemon(opts *SelinuxdOptions, mPath string, sh semodule.Handler, done chan 
 		panic(err)
 	}
 	defer ds.Close()
+
+	ss, err := initStatusServer(opts.StatusServerConfig, ds.GetReadOnly(), l)
+	if err != nil {
+		l.Error(err, "Unable initialize status server")
+		panic(err)
+	}
+
+	go serveState(ss, readychan, l)
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -43,8 +52,6 @@ func Daemon(opts *SelinuxdOptions, mPath string, sh semodule.Handler, done chan 
 
 	go InstallPolicies(mPath, sh, ds, policyops, l)
 
-	go serveState(opts.StatusServerConfig, ds.GetReadOnly(), l)
-
 	// NOTE(jaosorior): We do this before adding the path to the notification
 	// watcher so all the policies are installed already when we start watching
 	// for events.
@@ -56,6 +63,9 @@ func Daemon(opts *SelinuxdOptions, mPath string, sh semodule.Handler, done chan 
 	if err != nil {
 		l.Error(err, "Could not create an fsnotify watcher")
 	}
+
+	readychan <- true
+	close(readychan)
 
 	<-done
 }
