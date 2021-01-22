@@ -27,38 +27,49 @@ type StatusServerConfig struct {
 }
 
 type statusServer struct {
-	cfg StatusServerConfig
-	ds  datastore.ReadOnlyDataStore
-	l   logr.Logger
+	cfg   StatusServerConfig
+	ds    datastore.ReadOnlyDataStore
+	l     logr.Logger
+	lst   net.Listener
+	ready bool
 }
 
-func newStatusServer(cfg StatusServerConfig, ds datastore.ReadOnlyDataStore, l logr.Logger) *statusServer {
+func initStatusServer(cfg StatusServerConfig, ds datastore.ReadOnlyDataStore, l logr.Logger) (*statusServer, error) {
 	if cfg.Path == "" {
 		cfg.Path = DefaultUnixSockAddr
 	}
 
-	ss := &statusServer{cfg, ds, l}
-	return ss
-}
-
-func (ss *statusServer) Serve() error {
-	lst, err := createSocket(ss.cfg.Path, ss.cfg.UID, ss.cfg.GID)
+	lst, err := createSocket(cfg.Path, cfg.UID, cfg.GID)
 	if err != nil {
-		ss.l.Error(err, "error setting up socket")
+		l.Error(err, "error setting up socket")
 		// TODO: jhrozek: signal exit
-		return fmt.Errorf("setting up socket: %w", err)
+		return nil, fmt.Errorf("setting up socket: %w", err)
 	}
 
+	ss := &statusServer{cfg, ds, l, lst, false}
+	return ss, nil
+}
+
+func (ss *statusServer) Serve(readychan <-chan bool) error {
 	r := mux.NewRouter()
 	ss.initializeRoutes(r)
 
 	server := &http.Server{
 		Handler: r,
 	}
-	if err := server.Serve(lst); err != nil {
+
+	go ss.waitForReady(readychan)
+
+	if err := server.Serve(ss.lst); err != nil {
 		ss.l.Info("Server shutting down: %s", err)
 	}
 	return nil
+}
+
+func (ss *statusServer) waitForReady(readychan <-chan bool) {
+	ready := <-readychan
+	ss.ready = ready
+	ss.l.Info("Status Server got READY signal")
 }
 
 func (ss *statusServer) initializeRoutes(r *mux.Router) {
@@ -77,6 +88,8 @@ func (ss *statusServer) initializeRoutes(r *mux.Router) {
 	r.HandleFunc("/policies", ss.listPoliciesHandler).
 		Methods("GET")
 	r.HandleFunc("/policies", ss.catchAllNotGetHandler)
+	r.HandleFunc("/ready", ss.readyStatusHandler)
+	r.HandleFunc("/ready/", ss.readyStatusHandler)
 	r.HandleFunc("/", ss.catchAllHandler)
 
 	if ss.cfg.EnableProfiling {
@@ -126,6 +139,17 @@ func (ss *statusServer) getPolicyStatusHandler(w http.ResponseWriter, r *http.Re
 	}
 }
 
+func (ss *statusServer) readyStatusHandler(w http.ResponseWriter, r *http.Request) {
+	output := map[string]bool{
+		"ready": ss.ready,
+	}
+
+	if err := json.NewEncoder(w).Encode(output); err != nil {
+		ss.l.Error(err, "error writing ready response")
+		http.Error(w, "Cannot get ready status", http.StatusInternalServerError)
+	}
+}
+
 func (ss *statusServer) catchAllHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Invalid path", http.StatusBadRequest)
 }
@@ -157,14 +181,12 @@ func createSocket(path string, uid, gid int) (net.Listener, error) {
 	return listener, nil
 }
 
-func serveState(config StatusServerConfig, ds datastore.ReadOnlyDataStore, logger logr.Logger) {
+func serveState(server *statusServer, readychan <-chan bool, logger logr.Logger) {
 	slog := logger.WithName("state-server")
 
-	slog.Info("Serving status", "path", config.Path, "uid", config.UID, "gid", config.GID)
+	slog.Info("Serving status", "path", server.cfg.Path, "uid", server.cfg.UID, "gid", server.cfg.GID)
 
-	server := newStatusServer(config, ds, logger)
-
-	if err := server.Serve(); err != nil {
+	if err := server.Serve(readychan); err != nil {
 		slog.Error(err, "Error starting status server")
 	}
 }
