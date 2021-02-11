@@ -21,6 +21,8 @@ IMAGE_TAG=latest
 IMAGE_REF=$(IMAGE_NAME):$(IMAGE_TAG)
 
 IMAGE_REPO?=quay.io/jaosorior/$(IMAGE_REF)
+CENTOS_IMAGE_REPO?=quay.io/jaosorior/$(IMAGE_NAME)-centos:$(IMAGE_TAG)
+FEDORA_IMAGE_REPO?=quay.io/jaosorior/$(IMAGE_NAME)-fedora:$(IMAGE_TAG)
 
 # Targets
 
@@ -79,8 +81,19 @@ $(GOPATH)/bin/golangci-lint:
 	GOLANGCI_LINT_CACHE=/tmp/golangci-cache $(GOPATH)/bin/golangci-lint linters
 
 .PHONY: image
-image:
-	$(CONTAINTER_RUNTIME) build -t $(IMAGE_REPO) .
+image: default-image centos-image fedora-image
+
+.PHONY: default-image
+default-image:
+	$(CONTAINTER_RUNTIME) build -f images/Dockerfile.centos -t $(IMAGE_REPO) .
+
+.PHONY: centos-image
+centos-image:
+	$(CONTAINTER_RUNTIME) build -f images/Dockerfile.centos -t $(CENTOS_IMAGE_REPO) .
+
+.PHONY: fedora-image
+fedora-image:
+	$(CONTAINTER_RUNTIME) build -f images/Dockerfile.fedora -t $(FEDORA_IMAGE_REPO) .
 
 .PHONY: push
 push:
