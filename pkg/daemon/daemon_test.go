@@ -72,7 +72,7 @@ func getReadyRequest(ctx context.Context, t *testing.T) *http.Request {
 	return req
 }
 
-// nolint:gocognit
+// nolint:gocognit,gocyclo
 func TestDaemon(t *testing.T) {
 	done := make(chan bool)
 	logger, err := zap.NewDevelopment()
@@ -209,6 +209,36 @@ func TestDaemon(t *testing.T) {
 
 		if moduleList[0] != "test" {
 			t.Fatalf("expected 'test' module, got: %s", moduleList[0])
+		}
+	})
+
+	t.Run("Sending a GET to the socket's /policies/<policy name path should show the policy's status", func(t *testing.T) {
+		ppath := fmt.Sprintf("http://unix/policies/%s", moduleName)
+		req, err := http.NewRequestWithContext(ctx, "GET", ppath, nil)
+		if err != nil {
+			t.Fatalf("failed getting request: %s", err)
+		}
+
+		response, err := httpc.Do(req)
+		if err != nil {
+			t.Fatalf("GET error on the socket: %s", err)
+		}
+		defer response.Body.Close()
+
+		var moduleStatus map[string]string
+		err = json.NewDecoder(response.Body).Decode(&moduleStatus)
+		if err != nil {
+			t.Fatalf("cannot decode response: %s", err)
+		}
+
+		_, hasMsg := moduleStatus["msg"]
+
+		if !hasMsg {
+			t.Fatalf("expected status to contain message")
+		}
+
+		if moduleStatus["status"] != string(datastore.InstalledStatus) {
+			t.Fatalf("expected module's status to be installed, got: %s", moduleStatus["status"])
 		}
 	})
 
