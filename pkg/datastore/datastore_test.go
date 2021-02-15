@@ -66,12 +66,11 @@ func TestDataStore(t *testing.T) {
 }
 
 func TestStatusProbe(t *testing.T) {
-	type Args struct {
-		policy string
-		status StatusType
-		msg    string
+	status := PolicyStatus{
+		Status:  InstalledStatus,
+		Policy:  "my-policy",
+		Message: "all is good",
 	}
-	args := Args{"my-policy", "installed", "all is good"}
 
 	path, filecleanup := getNewStorePath(t)
 	defer filecleanup()
@@ -79,30 +78,29 @@ func TestStatusProbe(t *testing.T) {
 	defer dscleanup()
 
 	// We should be able to write a status correctly
-	if err := ds.PutStatus(args.policy, args.status, args.msg); err != nil {
+	if err := ds.Put(status); err != nil {
 		t.Errorf("DataStore.PutStatus() error = %v", err)
 	}
 
 	// We should be able to read a status correctly
-	status, msg, err := ds.GetStatus(args.policy)
+	rs, err := ds.Get(status.Policy)
 	if err != nil {
 		t.Errorf("DataStore.GetStatus() error = %v", err)
 	}
-	if args.status != status {
-		t.Errorf("DataStore.GetStatus() status didn't match. got: %s, expected: %s", status, args.status)
+	if status.Status != rs.Status {
+		t.Errorf("DataStore.GetStatus() status didn't match. got: %s, expected: %s", rs.Status, status.Status)
 	}
-	if args.msg != msg {
-		t.Errorf("DataStore.GetStatus() msg didn't match. got: %s, expected: %s", msg, args.msg)
+	if status.Message != rs.Message {
+		t.Errorf("DataStore.GetStatus() msg didn't match. got: %s, expected: %s", rs.Message, status.Message)
 	}
 }
 
 func TestStatusProbeReadOnly(t *testing.T) {
-	type Args struct {
-		policy string
-		status StatusType
-		msg    string
+	status := PolicyStatus{
+		Status:  InstalledStatus,
+		Policy:  "my-policy",
+		Message: "all is good",
 	}
-	args := Args{"my-policy", "installed", "all is good"}
 
 	path, filecleanup := getNewStorePath(t)
 	defer filecleanup()
@@ -111,33 +109,28 @@ func TestStatusProbeReadOnly(t *testing.T) {
 	rods := ds.GetReadOnly()
 
 	// We should be able to write a status correctly
-	if err := ds.PutStatus(args.policy, args.status, args.msg); err != nil {
+	if err := ds.Put(status); err != nil {
 		t.Errorf("DataStore.PutStatus() error = %v", err)
 	}
 
 	// We should be able to read a status correctly with the read-only interface
-	status, msg, err := rods.GetStatus(args.policy)
+	rs, err := rods.Get(status.Policy)
 	if err != nil {
 		t.Errorf("DataStore.GetStatus() error = %v", err)
 	}
-	if args.status != status {
-		t.Errorf("DataStore.GetStatus() status didn't match. got: %s, expected: %s", status, args.status)
+	if status.Status != rs.Status {
+		t.Errorf("DataStore.GetStatus() status didn't match. got: %s, expected: %s", rs.Status, status.Status)
 	}
-	if args.msg != msg {
-		t.Errorf("DataStore.GetStatus() msg didn't match. got: %s, expected: %s", msg, args.msg)
+	if status.Message != rs.Message {
+		t.Errorf("DataStore.GetStatus() msg didn't match. got: %s, expected: %s", rs.Message, status.Message)
 	}
 }
 
 func TestListPolicies(t *testing.T) {
-	type Args struct {
-		policy string
-		status StatusType
-		msg    string
-	}
-	argsList := []Args{
-		{"my-policy-1", "installed", "all is good"},
-		{"my-policy-2", "installed", "all is good"},
-		{"my-policy-3", "installed", "all is good"},
+	policyList := []PolicyStatus{
+		{Policy: "my-policy-1", Status: InstalledStatus, Message: "all is good"},
+		{Policy: "my-policy-2", Status: InstalledStatus, Message: "all is good"},
+		{Policy: "my-policy-3", Status: InstalledStatus, Message: "all is good"},
 	}
 
 	path, filecleanup := getNewStorePath(t)
@@ -145,9 +138,9 @@ func TestListPolicies(t *testing.T) {
 	ds, dscleanup := getNewStore(path, t)
 	defer dscleanup()
 
-	for _, args := range argsList {
+	for _, policy := range policyList {
 		// We should be able to write a status correctly
-		if err := ds.PutStatus(args.policy, args.status, args.msg); err != nil {
+		if err := ds.Put(policy); err != nil {
 			t.Errorf("DataStore.PutStatus() error = %v", err)
 		}
 	}
@@ -156,19 +149,18 @@ func TestListPolicies(t *testing.T) {
 	if err != nil {
 		t.Errorf("DataStore.List() error = %v", err)
 	}
-	if len(policies) != len(argsList) {
+	if len(policies) != len(policyList) {
 		t.Errorf("DataStore.List() didn't output the expected number of policies. Got %d, Expected %d",
-			len(policies), len(argsList))
+			len(policies), len(policyList))
 	}
 }
 
 func TestRemovePolicy(t *testing.T) {
-	type Args struct {
-		policy string
-		status StatusType
-		msg    string
+	status := PolicyStatus{
+		Status:  InstalledStatus,
+		Policy:  "my-policy",
+		Message: "all is good",
 	}
-	args := Args{"my-policy-1", "installed", "all is good"}
 
 	path, filecleanup := getNewStorePath(t)
 	defer filecleanup()
@@ -176,7 +168,7 @@ func TestRemovePolicy(t *testing.T) {
 	defer dscleanup()
 
 	// We should be able to write a status correctly
-	if err := ds.PutStatus(args.policy, args.status, args.msg); err != nil {
+	if err := ds.Put(status); err != nil {
 		t.Errorf("DataStore.PutStatus() error = %v", err)
 	}
 
@@ -190,7 +182,7 @@ func TestRemovePolicy(t *testing.T) {
 	}
 
 	// Remove the policy
-	if err := ds.Remove(args.policy); err != nil {
+	if err := ds.Remove(status.Policy); err != nil {
 		t.Errorf("DataStore.Remove() error = %v", err)
 	}
 

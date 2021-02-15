@@ -46,7 +46,12 @@ func (pi *policyInstall) do(modulePath string, sh semodule.Handler, ds datastore
 		msg = installErr.Error()
 	}
 
-	puterr := ds.PutStatus(policyName, status, msg)
+	ps := datastore.PolicyStatus{
+		Policy:  policyName,
+		Status:  status,
+		Message: msg,
+	}
+	puterr := ds.Put(ps)
 	if puterr != nil {
 		return "", fmt.Errorf("failed persisting status in datastore: %w", puterr)
 	}

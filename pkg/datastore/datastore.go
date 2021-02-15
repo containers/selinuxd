@@ -20,13 +20,13 @@ var (
 
 type ReadOnlyDataStore interface {
 	Close() error
-	GetStatus(policy string) (StatusType, string, error)
+	Get(policy string) (PolicyStatus, error)
 	List() ([]string, error)
 }
 
 type DataStore interface {
 	ReadOnlyDataStore
-	PutStatus(policy string, status StatusType, msg string) error
+	Put(status PolicyStatus) error
 	Remove(policy string) error
 	GetReadOnly() ReadOnlyDataStore
 }
