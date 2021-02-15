@@ -58,7 +58,7 @@ github.com/spf13/pflag
 github.com/spf13/viper
 # github.com/subosito/gotenv v1.2.0
 github.com/subosito/gotenv
-# go.etcd.io/bbolt v1.3.2
+# go.etcd.io/bbolt v1.3.5
 ## explicit
 go.etcd.io/bbolt
 # go.uber.org/atomic v1.7.0
