@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/JAORMX/selinuxd/pkg/datastore"
 	"github.com/JAORMX/selinuxd/pkg/semodule/test"
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/go-logr/zapr"
@@ -26,18 +26,23 @@ const (
 )
 
 var (
-	errModuleNotInstalled = fmt.Errorf("the module wasn't installed")
-	errModuleInstalled    = fmt.Errorf("the module was installed when it shouldn't")
+	errModuleNotInstalled    = fmt.Errorf("the module wasn't installed")
+	errModuleInstalled       = fmt.Errorf("the module was installed when it shouldn't")
+	errInstallNotPerfomedYet = fmt.Errorf("install action not performed yet")
 )
 
-func installPolicy(module, path string, t *testing.T) io.Closer {
+func getPolicyPath(module, path string) string {
 	moduleFileName := module + ".cil"
-	modPath := filepath.Join(path, moduleFileName)
-	f, err := os.Create(modPath)
+	return filepath.Join(path, moduleFileName)
+}
+
+func installPolicy(module, path string, t *testing.T) {
+	modPath := getPolicyPath(module, path)
+	message := []byte("Hello, Gophers!")
+	err := ioutil.WriteFile(modPath, message, 0600)
 	if err != nil {
-		t.Fatalf("Couldn't open module file %s: %s", modPath, err)
+		t.Fatal(err)
 	}
-	return f
 }
 
 func removePolicy(module, path string, t *testing.T) {
@@ -104,11 +109,17 @@ func TestDaemon(t *testing.T) {
 	defer cancel()
 
 	sh := test.NewSEModuleTestHandler()
-	go Daemon(&config, moddir, sh, done, zapr.NewLogger(logger))
 
-	t.Run("Module should install a policy", func(t *testing.T) {
-		f := installPolicy(moduleName, moddir, t)
-		defer f.Close()
+	ds, err := datastore.NewTestCountedDS(config.StatusDBPath)
+	if err != nil {
+		t.Fatalf("Unable to get R/W datastore: %s", err)
+	}
+	defer ds.Close()
+
+	go Daemon(&config, moddir, sh, ds, done, zapr.NewLogger(logger))
+
+	t.Run("Should install a policy", func(t *testing.T) {
+		installPolicy(moduleName, moddir, t)
 
 		// Module has to be installed... eventually
 		err := backoff.Retry(func() error {
@@ -119,6 +130,39 @@ func TestDaemon(t *testing.T) {
 		}, backoff.WithMaxRetries(backoff.NewConstantBackOff(defaultPollBackOff), 5))
 		if err != nil {
 			t.Fatalf("%s", err)
+		}
+	})
+
+	t.Run("Should skip policy installation if it's already installed", func(t *testing.T) {
+		initPolicyGets := ds.GetCalls()
+		initPolicyPuts := ds.PutCalls()
+		time.Sleep(1 * time.Second)
+		// Overwritting a policy with the same contents should not
+		// trigger another PUT
+		installPolicy(moduleName, moddir, t)
+
+		var currentGetCalls, currentPutCalls int32
+
+		// Module has to be installed... eventually
+		err := backoff.Retry(func() error {
+			// "touching" the policy will trigger an inotify
+			// event which will attempt to install it again.
+			// The action interface will "get" the policy
+			// and compare the checksum
+			currentGetCalls = ds.GetCalls()
+			currentPutCalls = ds.PutCalls()
+			if initPolicyGets == currentGetCalls {
+				return errInstallNotPerfomedYet
+			}
+			return nil
+		}, backoff.WithMaxRetries(backoff.NewConstantBackOff(defaultPollBackOff), 5))
+		if err != nil {
+			t.Fatalf("%s. Got GET calls %d - Started with %d", err, currentGetCalls, initPolicyGets)
+		}
+
+		if currentPutCalls != initPolicyPuts {
+			t.Fatalf("The policy was updated unexpectedly. Got put calls: %d - Expected: %d",
+				currentGetCalls, initPolicyPuts)
 		}
 	})
 

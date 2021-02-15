@@ -109,7 +109,7 @@ func daemonCmdFunc(rootCmd *cobra.Command, _ []string) {
 	}
 	defer sh.Close()
 
-	go daemon.Daemon(options, defaultModulePath, sh, done, logger)
+	go daemon.Daemon(options, defaultModulePath, sh, nil, done, logger)
 
 	<-exitSignal
 	logger.Info("Exit signal received")

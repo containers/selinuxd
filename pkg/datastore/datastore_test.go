@@ -67,9 +67,10 @@ func TestDataStore(t *testing.T) {
 
 func TestStatusProbe(t *testing.T) {
 	status := PolicyStatus{
-		Status:  InstalledStatus,
-		Policy:  "my-policy",
-		Message: "all is good",
+		Status:   InstalledStatus,
+		Policy:   "my-policy",
+		Message:  "all is good",
+		Checksum: []byte("123"),
 	}
 
 	path, filecleanup := getNewStorePath(t)
@@ -97,9 +98,10 @@ func TestStatusProbe(t *testing.T) {
 
 func TestStatusProbeReadOnly(t *testing.T) {
 	status := PolicyStatus{
-		Status:  InstalledStatus,
-		Policy:  "my-policy",
-		Message: "all is good",
+		Status:   InstalledStatus,
+		Policy:   "my-policy",
+		Message:  "all is good",
+		Checksum: []byte("123"),
 	}
 
 	path, filecleanup := getNewStorePath(t)

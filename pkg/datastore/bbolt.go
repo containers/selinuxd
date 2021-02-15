@@ -72,12 +72,16 @@ func (ds *bboltDataStore) Put(status PolicyStatus) error {
 		if err != nil {
 			return fmt.Errorf("couldn't persist policy status message: %w", err)
 		}
+		err = bkt.Put([]byte("checksum"), status.Checksum)
+		if err != nil {
+			return fmt.Errorf("couldn't persist policy status message: %w", err)
+		}
 		return nil
 	})
 }
 
 func (ds *bboltDataStore) Get(policy string) (PolicyStatus, error) {
-	var status, msg []byte
+	var status, msg, cs []byte
 	if ds.db == nil {
 		return PolicyStatus{}, ErrDataStoreNotInitialized
 	}
@@ -92,6 +96,7 @@ func (ds *bboltDataStore) Get(policy string) (PolicyStatus, error) {
 		}
 		status = b.Get([]byte("status"))
 		msg = b.Get([]byte("msg"))
+		cs = b.Get([]byte("checksum"))
 		return nil
 	})
 	if err != nil {
@@ -99,9 +104,10 @@ func (ds *bboltDataStore) Get(policy string) (PolicyStatus, error) {
 	}
 
 	return PolicyStatus{
-		Policy:  policy,
-		Status:  StatusType(status),
-		Message: string(msg),
+		Policy:   policy,
+		Status:   StatusType(status),
+		Message:  string(msg),
+		Checksum: cs,
 	}, nil
 }
 

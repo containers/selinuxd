@@ -1,6 +1,8 @@
 package daemon
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 
 	"github.com/JAORMX/selinuxd/pkg/datastore"
@@ -37,6 +39,20 @@ func (pi *policyInstall) do(modulePath string, sh semodule.Handler, ds datastore
 		return "", fmt.Errorf("failed getting a safe path for policy: %w", err)
 	}
 
+	cs, csErr := utils.Checksum(policyPath)
+	if csErr != nil {
+		return "", fmt.Errorf("installing policy: %w", csErr)
+	}
+
+	p, getErr := ds.Get(policyName)
+	// If the checksums are equal, the policy is already installed
+	// and in an appropriate state
+	if getErr == nil && bytes.Equal(p.Checksum, cs) {
+		return "", nil
+	} else if getErr != nil && !errors.Is(getErr, datastore.ErrPolicyNotFound) {
+		return "", fmt.Errorf("installing policy: couldn't access datastore: %w", getErr)
+	}
+
 	installErr := sh.Install(policyPath)
 	status := datastore.InstalledStatus
 	var msg string
@@ -47,9 +63,10 @@ func (pi *policyInstall) do(modulePath string, sh semodule.Handler, ds datastore
 	}
 
 	ps := datastore.PolicyStatus{
-		Policy:  policyName,
-		Status:  status,
-		Message: msg,
+		Policy:   policyName,
+		Status:   status,
+		Message:  msg,
+		Checksum: cs,
 	}
 	puterr := ds.Put(ps)
 	if puterr != nil {

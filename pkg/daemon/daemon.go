@@ -19,18 +19,23 @@ type SelinuxdOptions struct {
 // * `opts`: are the options to run status server.
 // * `mPath`: is the path to install and read modules from.
 // * `sh`: is the SELinux module handler interface.
+// * `ds`: is the DataStore interface.
 // * `l`: is a logger interface.
-func Daemon(opts *SelinuxdOptions, mPath string, sh semodule.Handler, done chan bool, l logr.Logger) {
+func Daemon(opts *SelinuxdOptions, mPath string, sh semodule.Handler, ds datastore.DataStore, done chan bool,
+	l logr.Logger) {
 	policyops := make(chan PolicyAction)
 	readychan := make(chan bool)
 
 	l.Info("Started daemon")
-	ds, err := datastore.New(opts.StatusDBPath)
-	if err != nil {
-		l.Error(err, "Unable to get R/W datastore")
-		panic(err)
+	if ds == nil {
+		var err error
+		ds, err = datastore.New(opts.StatusDBPath)
+		if err != nil {
+			l.Error(err, "Unable to get R/W datastore")
+			panic(err)
+		}
+		defer ds.Close()
 	}
-	defer ds.Close()
 
 	ss, err := initStatusServer(opts.StatusServerConfig, ds.GetReadOnly(), l)
 	if err != nil {
