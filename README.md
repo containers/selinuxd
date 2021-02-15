@@ -1,10 +1,10 @@
 selinuxd
 ========
 
-This is a POC to show a daemon that would listen to SELinux policies on a
-specific directory and install them.
+This a daemon that has the purpose of installing and removing policies as they are
+laid in a specific directory. This directory is `/etc/selinux.d` by default.
 
-The intent is to show a infrastructure-as-code approach to installing SELinux
+The intent is to follow a infrastructure-as-code approach for installing SELinux
 policies. With this, installing policies is a matter of persisting policy files
 in a specific directory, which the daemon will immediately pick up and try to
 install them.
@@ -15,7 +15,7 @@ Building
 Golang 1.15 and GNU make are required. In Fedora 33, the installation is a matter of doing:
 
 ```
-$ sudo dnf install golang make libsemanage-devel
+$ sudo dnf install golang make libsemanage-devel policycoreutils
 ```
 
 With this, you can build the daemon's binary with `make build`, or simply
@@ -118,27 +118,21 @@ to what the [ignition format](https://github.com/coreos/ignition) requires.
 
 Without this daemon, each policy installation would require us to persist the file
 on the node, then run a one-off systemd unit to install the policy. As policies
-get added to the system, the number of systemd units increases, which is not scalable.
+get added to the system, the number of systemd units increases, which is neither scalable
+nor user-friendly.
 
-The intent is to make this the base for the (SELinux Operator)[https://github.com/JAORMX/selinux-operator],
-as opposed to the daemonset-based approach which was taken initially.
-
-TODO
+Uses
 ====
 
-* Compile as a single binary instead of linking to the shared libraries
+This daemon is currently being used [in the security-profiles-operator](
+https://github.com/kubernetes-sigs/security-profiles-operator) in order to do
+the heavy lifting of installing SELinux policies. The operator itself manages the policies
+as Kubernetes objects, and the daemon makes sure that they are actually installed in
+the nodes of the cluster.
 
-  - This uses the libsemanage library to interact with SELinux.
+Looking for a home
+==================
 
-  - The intent is to make this available in Fedora CoreOS and RHCOS in the future.
-
-* Enable a query command or mechanism to check the status of the policy installed.
-
-  - Was my policy installed correctly?
-
-  - Did it have errors?
-
-* Re-write this whole thing (this is just a POC... we should consider if we want to keep
-  this in Golang, or use Rust or C instead).
-
-* Handle policy renames
+While this daemon is currently being developed in **JAORMX/selinuxd**, it would be better
+for this project to live elsewhere. If you have ideas on where would be an appropriate
+place for this. We are open to suggestions!
