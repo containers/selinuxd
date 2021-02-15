@@ -1,12 +1,15 @@
 package test
 
 import (
+	"sync"
+
 	"github.com/JAORMX/selinuxd/pkg/semodule"
 	"github.com/JAORMX/selinuxd/pkg/utils"
 )
 
 type SEModuleTestHandler struct {
 	modules []string
+	mu      sync.Mutex
 }
 
 // Ensure that the test handler implements the Handler interface
@@ -27,11 +30,15 @@ func (smt *SEModuleTestHandler) Install(modulePath string) error {
 	if smt.IsModuleInstalled(module) {
 		return nil
 	}
+	smt.mu.Lock()
+	defer smt.mu.Unlock()
 	smt.modules = append(smt.modules, module)
 	return nil
 }
 
 func (smt *SEModuleTestHandler) IsModuleInstalled(module string) bool {
+	smt.mu.Lock()
+	defer smt.mu.Unlock()
 	for _, mod := range smt.modules {
 		// The module had already been installed.
 		// Nothing to do
@@ -44,11 +51,15 @@ func (smt *SEModuleTestHandler) IsModuleInstalled(module string) bool {
 
 func (smt *SEModuleTestHandler) List() ([]string, error) {
 	// Return a copy
+	smt.mu.Lock()
+	defer smt.mu.Unlock()
 	return append([]string(nil), smt.modules...), nil
 }
 
 func (smt *SEModuleTestHandler) Remove(modToRemove string) error {
 	idToRemove := -1
+	smt.mu.Lock()
+	defer smt.mu.Unlock()
 	for id, mod := range smt.modules {
 		if mod == modToRemove {
 			idToRemove = id
