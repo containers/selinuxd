@@ -22,6 +22,7 @@ RUN mkdir -p bin
 
 RUN dnf install -y --disableplugin=subscription-manager \
     --enablerepo=powertools \
+    udica \
     golang make libsemanage-devel
 
 ADD . /work
@@ -41,8 +42,14 @@ LABEL name="selinuxd" \
 # TODO(jaosorior): Remove once we use static linking
 RUN dnf install -y --disableplugin=subscription-manager \
     --enablerepo=powertools \
-    udica \
     policycoreutils
+
+RUN mkdir -p /usr/share/selinuxd/templates
+COPY --from=build /usr/share/udica/templates/* /usr/share/selinuxd/templates/
+
+# For backwards compatibility with older SPO, we can remove later
+RUN mkdir -p /usr/share/udica/
+RUN ln -s /usr/share/selinuxd/templates /usr/share/udica/templates
 
 COPY --from=build /work/bin/selinuxdctl /usr/bin/
 

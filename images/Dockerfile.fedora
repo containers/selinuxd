@@ -20,7 +20,7 @@ WORKDIR /work
 COPY go.mod go.sum vendor/ ./
 RUN mkdir -p bin
 
-RUN microdnf install -y golang make libsemanage-devel
+RUN microdnf install -y udica golang make libsemanage-devel
 
 ADD . /work
 
@@ -35,7 +35,15 @@ LABEL name="selinuxd" \
       description="selinuxd is a daemon that listens for files in /etc/selinux.d/ and installs the relevant policies."
 
 # TODO(jaosorior): Remove once we use static linking
-RUN microdnf install -y udica policycoreutils
+RUN microdnf install -y policycoreutils
+
+RUN mkdir -p /usr/share/selinuxd/templates
+COPY --from=build /usr/share/udica/templates/* /usr/share/selinuxd/templates/
+
+# For backwards compatibility with older SPO, we can remove later
+RUN mkdir -p /usr/share/udica/
+RUN ln -s /usr/share/selinuxd/templates /usr/share/udica/templates
+
 
 COPY --from=build /work/bin/selinuxdctl /usr/bin/
 
