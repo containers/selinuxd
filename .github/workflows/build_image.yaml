@@ -1,0 +1,33 @@
+name: Build Images
+on: [push, pull_request]
+
+jobs:
+  build-fedora:
+    name: Build Fedora image
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Buildah Action
+      uses: redhat-actions/buildah-build@v2
+      with:
+        image: selinuxd-fedora
+        tags: latest ${{ github.sha }}
+        dockerfiles: |
+          ./images/Dockerfile.fedora
+
+  build-centos:
+    name: Build CentOS image
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Buildah Action
+      uses: redhat-actions/buildah-build@v2
+      with:
+        image: selinuxd-centos
+        tags: latest ${{ github.sha }}
+        dockerfiles: |
+          ./images/Dockerfile.centos
