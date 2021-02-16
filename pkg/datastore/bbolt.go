@@ -51,7 +51,7 @@ func (ds *bboltDataStore) GetReadOnly() ReadOnlyDataStore {
 	return ds
 }
 
-func (ds *bboltDataStore) PutStatus(policy string, status StatusType, msg string) error {
+func (ds *bboltDataStore) Put(status PolicyStatus) error {
 	if ds.db == nil {
 		return ErrDataStoreNotInitialized
 	}
@@ -60,15 +60,19 @@ func (ds *bboltDataStore) PutStatus(policy string, status StatusType, msg string
 		if root == nil {
 			return ErrDataStoreNotInitialized
 		}
-		bkt, err := root.CreateBucketIfNotExists([]byte(policy))
+		bkt, err := root.CreateBucketIfNotExists([]byte(status.Policy))
 		if err != nil {
 			return fmt.Errorf("couldn't create policy entry: %w", err)
 		}
-		err = bkt.Put([]byte("status"), []byte(status))
+		err = bkt.Put([]byte("status"), []byte(status.Status))
 		if err != nil {
 			return fmt.Errorf("couldn't persist policy status: %w", err)
 		}
-		err = bkt.Put([]byte("msg"), []byte(msg))
+		err = bkt.Put([]byte("msg"), []byte(status.Message))
+		if err != nil {
+			return fmt.Errorf("couldn't persist policy status message: %w", err)
+		}
+		err = bkt.Put([]byte("checksum"), status.Checksum)
 		if err != nil {
 			return fmt.Errorf("couldn't persist policy status message: %w", err)
 		}
@@ -76,10 +80,10 @@ func (ds *bboltDataStore) PutStatus(policy string, status StatusType, msg string
 	})
 }
 
-func (ds *bboltDataStore) GetStatus(policy string) (StatusType, string, error) {
-	var status, msg []byte
+func (ds *bboltDataStore) Get(policy string) (PolicyStatus, error) {
+	var status, msg, cs []byte
 	if ds.db == nil {
-		return "", "", ErrDataStoreNotInitialized
+		return PolicyStatus{}, ErrDataStoreNotInitialized
 	}
 	err := ds.db.View(func(tx *bolt.Tx) error {
 		root := tx.Bucket(ds.root)
@@ -92,13 +96,19 @@ func (ds *bboltDataStore) GetStatus(policy string) (StatusType, string, error) {
 		}
 		status = b.Get([]byte("status"))
 		msg = b.Get([]byte("msg"))
+		cs = b.Get([]byte("checksum"))
 		return nil
 	})
 	if err != nil {
-		return "", "", fmt.Errorf("couldn't get policy status: %w", err)
+		return PolicyStatus{}, fmt.Errorf("couldn't get policy status: %w", err)
 	}
 
-	return StatusType(status), string(msg), nil
+	return PolicyStatus{
+		Policy:   policy,
+		Status:   StatusType(status),
+		Message:  string(msg),
+		Checksum: cs,
+	}, nil
 }
 
 func (ds *bboltDataStore) List() ([]string, error) {

@@ -90,12 +90,17 @@ func LogWrapper(cmsg *C.char, level C.int) {
 }
 
 type SeHandler struct {
-	handle *C.semanage_handle_t
+	handle     *C.semanage_handle_t
+	autoCommit bool
 }
 
 // NewSemanageHandler creates a new instance of a semodule.Handler that
 // handles SELinux module interactions through the semanage interface
-func NewSemanageHandler(logger logr.Logger) (semodule.Handler, error) {
+//
+// `autoCommit` tells the handler to always issue a commit when
+// installing/removing policies. If this is set to `off` You would
+// need to commit explicitly.
+func NewSemanageHandler(autoCommit bool, logger logr.Logger) (semodule.Handler, error) {
 	globLogger = logger
 	handle := C.semanage_handle_create()
 	if handle == nil {
@@ -111,7 +116,13 @@ func NewSemanageHandler(logger logr.Logger) (semodule.Handler, error) {
 
 	return &SeHandler{
 		handle,
+		autoCommit,
 	}, nil
+}
+
+// SetAutoCommit set's the `autoCommit` property in the handler
+func (sm *SeHandler) SetAutoCommit(autoCommit bool) {
+	sm.autoCommit = autoCommit
 }
 
 func (sm *SeHandler) getNthModName(n int, modInfoList *C.semanage_module_info_t) string {
@@ -174,7 +185,10 @@ func (sm *SeHandler) Remove(moduleName string) error {
 		return NewErrCannotRemoveModule(moduleName)
 	}
 
-	return sm.commit()
+	if sm.autoCommit {
+		return sm.Commit()
+	}
+	return nil
 }
 
 func (sm *SeHandler) Install(moduleFile string) error {
@@ -190,10 +204,13 @@ func (sm *SeHandler) Install(moduleFile string) error {
 		return NewErrCannotInstallModule(moduleFile)
 	}
 
-	return sm.commit()
+	if sm.autoCommit {
+		return sm.Commit()
+	}
+	return nil
 }
 
-func (sm *SeHandler) commit() error {
+func (sm *SeHandler) Commit() error {
 	if sm.handle == nil {
 		return ErrNilHandle
 	}

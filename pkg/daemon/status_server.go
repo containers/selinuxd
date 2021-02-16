@@ -118,7 +118,7 @@ func (ss *statusServer) listPoliciesHandler(w http.ResponseWriter, r *http.Reque
 func (ss *statusServer) getPolicyStatusHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	policy := vars["policy"]
-	status, msg, err := ss.ds.GetStatus(policy)
+	status, err := ss.ds.Get(policy)
 	if errors.Is(err, datastore.ErrPolicyNotFound) {
 		http.Error(w, "couldn't find requested policy", http.StatusNotFound)
 		return
@@ -128,11 +128,7 @@ func (ss *statusServer) getPolicyStatusHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	output := map[string]string{
-		"status": string(status),
-		"msg":    msg,
-	}
-	err = json.NewEncoder(w).Encode(output)
+	err = json.NewEncoder(w).Encode(status)
 	if err != nil {
 		ss.l.Error(err, "error writing status response")
 		http.Error(w, "Cannot get status", http.StatusInternalServerError)
