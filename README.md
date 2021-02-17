@@ -82,6 +82,13 @@ This enables an easy way to install policies by establishing intent, as opposed 
 having to tell a system how to do things. This way, all we need to do is tell a system
 that we want a file in a specific path in the file system, and the rest will be taken care of.
 
+SELinux policies often are used to secure workloads on nodes and should be
+treated as part of the workload deployment. By getting this daemon to dynamically
+install and track these policies, we're able to more closely link the policies
+to the workloads that require them. Policies, in this context, are not
+configuration files for the node, but instead and statements on how to secure a
+running workload.
+
 OpenShift/Machine Config Operator
 ---------------------------------
 
