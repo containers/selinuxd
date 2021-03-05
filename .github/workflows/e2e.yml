@@ -1,0 +1,44 @@
+name: e2e
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+jobs:
+  fedora-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: make fedora-image
+      - run: podman save -o image.tar quay.io/jaosorior/selinuxd-fedora:latest
+      - uses: actions/upload-artifact@v2
+        with:
+          name: fedora-image-tar
+          path: image.tar
+
+  fedora-e2e:
+    needs: fedora-image
+    runs-on: macos-10.15
+    timeout-minutes: 80
+    env:
+      RUN: ./hack/ci/run.sh
+      IMG: quay.io/jaosorior/selinuxd-fedora:latest
+      CONTAINER_NAME: selinuxd
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: fedora-image-tar
+          path: .
+      - name: Boot Virtual Machine
+        run: make vagrant-up
+      - name: Run selinuxd
+        run: $RUN hack/ci/daemon.sh
+      - name: Run E2E tests
+        run: $RUN hack/ci/e2e.sh
+      - name: Get logs
+        run: $RUN hack/ci/logs.sh
+      - uses: actions/upload-artifact@v2
+        with:
+          name: e2e-fedora-logs
+          path: ${{ env.CONTAINER_NAME }}.logs

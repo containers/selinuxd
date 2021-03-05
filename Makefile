@@ -39,6 +39,10 @@ $(BIN): $(BINDIR) $(SRC) pkg/semodule/semanage/callbacks.c
 test:
 	go test -race github.com/JAORMX/selinuxd/...
 
+.PHONY: e2e
+e2e:
+	/bin/true
+
 .PHONY: run
 run: $(BIN) $(POLICYDIR)
 	sudo $(BIN) daemon
@@ -98,3 +102,12 @@ fedora-image:
 .PHONY: push
 push:
 	$(CONTAINTER_RUNTIME) push $(IMAGE_REPO)
+
+.PHONY: vagrant-up
+vagrant-up: ## Boot the vagrant based test VM
+	if [ ! -f image.tar ]; then \
+		make image IMAGE=$(IMAGE) && \
+		$(CONTAINER_RUNTIME) save -o image.tar $(IMAGE); \
+	fi
+	ln -sf hack/ci/Vagrantfile .
+	vagrant up
