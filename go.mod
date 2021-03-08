@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/cenkalti/backoff/v4 v4.1.0
+	github.com/cucumber/godog v0.11.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/go-logr/logr v0.4.0
 	github.com/go-logr/zapr v0.4.0
@@ -11,6 +12,7 @@ require (
 	github.com/magiconair/properties v1.8.4 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.4.0 // indirect
+	github.com/olekukonko/tablewriter v0.0.5
 	github.com/pelletier/go-toml v1.8.1 // indirect
 	github.com/spf13/afero v1.4.1 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
