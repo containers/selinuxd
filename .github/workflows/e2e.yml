@@ -5,7 +5,7 @@ on:
       - master
   pull_request:
 jobs:
-  fedora-image:
+  e2e-image:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -16,8 +16,8 @@ jobs:
           name: fedora-image-tar
           path: image.tar
 
-  fedora-e2e:
-    needs: fedora-image
+  e2e:
+    needs: e2e-image
     runs-on: macos-10.15
     timeout-minutes: 80
     env:

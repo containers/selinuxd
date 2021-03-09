@@ -1,1 +1,6 @@
 bin/selinuxdctl
+
+# e2e
+image.tar
+.vagrant
+Vagrantfile

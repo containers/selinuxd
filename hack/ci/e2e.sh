@@ -15,4 +15,9 @@
 
 set -euo pipefail
 
+source hack/ci/env.sh
+
+export SELINUXD_IS_CONTAINER="true"
+export SELINUXD_CONTAINER_NAME="$CONTAINER_NAME"
+
 make e2e

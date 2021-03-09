@@ -23,6 +23,7 @@ Vagrant.configure("2") do |config|
       set -euxo pipefail
       dnf install -y \
         make \
+        golang \
         oci-seccomp-bpf-hook \
         podman
     SHELL

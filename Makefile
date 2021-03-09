@@ -41,7 +41,8 @@ test:
 
 .PHONY: e2e
 e2e:
-	/bin/true
+	go test ./tests/e2e -timeout 40m -v --ginkgo.v
+
 
 .PHONY: run
 run: $(BIN) $(POLICYDIR)
