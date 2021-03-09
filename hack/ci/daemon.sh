@@ -15,8 +15,7 @@
 
 set -euo pipefail
 
-IMG="${IMG:-quay.io/jaosorior/selinuxd-fedora:latest}"
-CONTAINER_NAME="${CONTAINER_NAME:-selinuxd}"
+source hack/ci/env.sh
 
 mkdir -p /etc/selinux.d
 

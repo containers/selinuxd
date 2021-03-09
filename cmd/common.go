@@ -16,14 +16,22 @@ limitations under the License.
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"net"
+	"net/http"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 )
 
-const defaultModulePath = "/etc/selinux.d"
+const (
+	defaultModulePath   = "/etc/selinux.d"
+	defaultTimeout      = 10 * time.Second
+	baseStatusServerURL = "http://unix"
+)
 
 func getLogger() (logr.Logger, error) {
 	logger, err := zap.NewProduction()
@@ -36,4 +44,14 @@ func getLogger() (logr.Logger, error) {
 	// nolint:errcheck
 	defer logger.Sync() // flushes buffer, if any
 	return logIf, nil
+}
+
+func getHTTPClient(sockpath string) *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+				return net.Dial("unix", sockpath)
+			},
+		},
+	}
 }

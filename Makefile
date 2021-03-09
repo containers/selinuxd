@@ -37,11 +37,12 @@ $(BIN): $(BINDIR) $(SRC) pkg/semodule/semanage/callbacks.c
 
 .PHONY: test
 test:
-	go test -race github.com/JAORMX/selinuxd/...
+	go test -race github.com/JAORMX/selinuxd/pkg/...
 
 .PHONY: e2e
 e2e:
-	/bin/true
+	go test ./tests/e2e -timeout 40m -v --ginkgo.v
+
 
 .PHONY: run
 run: $(BIN) $(POLICYDIR)
