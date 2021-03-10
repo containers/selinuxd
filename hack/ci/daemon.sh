@@ -36,3 +36,6 @@ podman run \
     -v /var/lib/selinux:/var/lib/selinux \
     -v /etc/selinux.d:/etc/selinux.d \
     $IMG daemon
+
+# Should create selinuxd.cil
+podman inspect "$CONTAINER_NAME" | udica selinuxd

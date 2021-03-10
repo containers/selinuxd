@@ -42,3 +42,9 @@ jobs:
         with:
           name: e2e-fedora-logs
           path: ${{ env.CONTAINER_NAME }}.logs
+      - name: Fetch selinux policy
+        run: $RUN cat selinuxd.cil > selinuxd.cil
+      - uses: actions/upload-artifact@v2
+        with:
+          name: selinux-policy
+          path: selinuxd.cil
