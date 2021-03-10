@@ -25,7 +25,8 @@ Vagrant.configure("2") do |config|
         make \
         golang \
         oci-seccomp-bpf-hook \
-        podman
+        podman \
+        udica
     SHELL
   end
 
