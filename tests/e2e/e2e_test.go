@@ -30,5 +30,24 @@ var _ = Describe("E2e", func() {
 				policyEventually(policy).Should(MatchRegexp(`status.*Installed`))
 			})
 		})
+
+		When("Installing a erroneous policy", func() {
+			var (
+				policy     = "badtestport"
+				policyPath = filepath.Join(selinuxdDir, fmt.Sprintf("%s.cil", policy))
+			)
+			BeforeEach(func() {
+				installPolicyFromReference("../data/badtestport.cil", policyPath)
+			})
+
+			AfterEach(func() {
+				removePolicyIfPossible(policyPath)
+			})
+
+			It("Reports an error status", func() {
+				By("Waiting for the policy to be installed")
+				policyEventually(policy).Should(MatchRegexp(`status.*Failed`))
+			})
+		})
 	})
 })
