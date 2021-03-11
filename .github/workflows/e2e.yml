@@ -47,6 +47,15 @@ jobs:
           name: e2e-fedora-logs
           path: ${{ env.CONTAINER_NAME }}.logs
         if: ${{ always() }}
+      - name: Stop selinuxd
+        run: $RUN podman stop ${{ env.CONTAINER_NAME }}
+        if: ${{ always() }}
+      - name: Fetch seccomp profile
+        run: $RUN cat /tmp/selinuxd-seccomp.json > selinuxd-seccomp.json
+      - uses: actions/upload-artifact@v2
+        with:
+          name: seccomp-profile
+          path: selinuxd-seccomp.json
       - name: Fetch selinux policy
         run: $RUN cat selinuxd.cil > selinuxd.cil
       - uses: actions/upload-artifact@v2

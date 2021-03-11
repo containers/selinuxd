@@ -31,6 +31,7 @@ podman run \
 podman run \
     --name "$CONTAINER_NAME" \
     -d \
+    --annotation io.containers.trace-syscall="of:/tmp/selinuxd-seccomp.json" \
     --privileged \
     -v /sys/fs/selinux:/sys/fs/selinux \
     -v /var/lib/selinux:/var/lib/selinux \
