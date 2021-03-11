@@ -38,10 +38,15 @@ jobs:
         run: $RUN hack/ci/e2e.sh
       - name: Get logs
         run: $RUN hack/ci/logs.sh
+        if: ${{ always() }}
+      - name: Fetch selinuxd logs
+        run: $RUN cat ${{ env.CONTAINER_NAME }}.logs > ${{ env.CONTAINER_NAME }}.logs
+        if: ${{ always() }}
       - uses: actions/upload-artifact@v2
         with:
           name: e2e-fedora-logs
           path: ${{ env.CONTAINER_NAME }}.logs
+        if: ${{ always() }}
       - name: Fetch selinux policy
         run: $RUN cat selinuxd.cil > selinuxd.cil
       - uses: actions/upload-artifact@v2
