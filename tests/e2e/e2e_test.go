@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	. "github.com/onsi/ginkgo"
@@ -70,6 +71,32 @@ var _ = Describe("E2e", func() {
 				By("Updating policy to a valid one")
 				installPolicyFromReference("../data/testport.cil", policyPath)
 
+				By("Waiting for the policy to be installed")
+				policyEventually(policy).Should(MatchRegexp(`status.*Installed`))
+			})
+		})
+
+		When("Installing policy in sub-directory", func() {
+			var (
+				policy     = "subdirtestport"
+				subdirPath = filepath.Join(selinuxdDir, "my-subdir")
+				policyPath = filepath.Join(subdirPath, fmt.Sprintf("%s.cil", policy))
+			)
+			BeforeEach(func() {
+				By("Creating subdir")
+				mkdirErr := os.Mkdir(subdirPath, 0700)
+				Expect(mkdirErr).ToNot(HaveOccurred())
+				installPolicyFromReference("../data/testport.cil", policyPath)
+			})
+
+			AfterEach(func() {
+				removePolicyIfPossible(policyPath)
+				By("Deleting subdir")
+				rmdirErr := os.Remove(subdirPath)
+				Expect(rmdirErr).ToNot(HaveOccurred())
+			})
+
+			It("Reports an installed status", func() {
 				By("Waiting for the policy to be installed")
 				policyEventually(policy).Should(MatchRegexp(`status.*Installed`))
 			})
