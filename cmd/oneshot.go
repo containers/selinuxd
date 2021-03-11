@@ -62,7 +62,7 @@ func tryInstallAllPolicies(sh semodule.Handler, ds datastore.DataStore, logger l
 	policyops := make(chan daemon.PolicyAction)
 
 	go func() {
-		if err := daemon.InstallPoliciesInDir(defaultModulePath, policyops); err != nil {
+		if err := daemon.InstallPoliciesInDir(defaultModulePath, policyops, nil); err != nil {
 			logger.Error(err, "Installing policies in module directory")
 		}
 		close(policyops)

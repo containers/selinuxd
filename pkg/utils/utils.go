@@ -9,7 +9,10 @@ import (
 	"path/filepath"
 )
 
-var ErrInvalidPath = errors.New("invalid path")
+var (
+	ErrInvalidPath = errors.New("invalid path")
+	ErrNoExtension = errors.New("file without extension")
+)
 
 func NewErrInvalidPath(path string) error {
 	return fmt.Errorf("%w: %s", ErrInvalidPath, path)
@@ -42,6 +45,9 @@ func GetSafePath(modulePath, path string) (string, error) {
 }
 
 func PolicyNameFromPath(path string) (string, error) {
+	if filepath.Ext(path) == "" {
+		return "", fmt.Errorf("ignoring: %w", ErrNoExtension)
+	}
 	baseFile, err := GetCleanBase(path)
 	if err != nil {
 		return "", fmt.Errorf("failed getting clean base name for policy: %w", err)

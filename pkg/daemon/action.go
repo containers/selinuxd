@@ -34,12 +34,8 @@ func (pi *policyInstall) do(modulePath string, sh semodule.Handler, ds datastore
 	if err != nil {
 		return "", fmt.Errorf("installing policy: %w", err)
 	}
-	policyPath, err := utils.GetSafePath(modulePath, pi.path)
-	if err != nil {
-		return "", fmt.Errorf("failed getting a safe path for policy: %w", err)
-	}
 
-	cs, csErr := utils.Checksum(policyPath)
+	cs, csErr := utils.Checksum(pi.path)
 	if csErr != nil {
 		return "", fmt.Errorf("installing policy: %w", csErr)
 	}
@@ -53,7 +49,7 @@ func (pi *policyInstall) do(modulePath string, sh semodule.Handler, ds datastore
 		return "", fmt.Errorf("installing policy: couldn't access datastore: %w", getErr)
 	}
 
-	installErr := sh.Install(policyPath)
+	installErr := sh.Install(pi.path)
 	status := datastore.InstalledStatus
 	var msg string
 

@@ -60,7 +60,7 @@ func Daemon(opts *SelinuxdOptions, mPath string, sh semodule.Handler, ds datasto
 	// NOTE(jaosorior): We do this before adding the path to the notification
 	// watcher so all the policies are installed already when we start watching
 	// for events.
-	if err := InstallPoliciesInDir(mPath, policyops); err != nil {
+	if err := InstallPoliciesInDir(mPath, policyops, watcher); err != nil {
 		l.Error(err, "Installing policies in module directory")
 	}
 
@@ -84,14 +84,27 @@ func watchFiles(watcher *fsnotify.Watcher, policyops chan PolicyAction, logger l
 				fwlog.Info("WARNING: the fsnotify channel has been closed or is empty")
 				return // TODO(jaosorior): Actually signal exit
 			}
-			if event.Op&fsnotify.Remove != 0 {
+			switch dispatch(event) {
+			case dispatchRemoval:
 				fwlog.Info("Removing policy", "file", event.Name)
 				policyops <- newRemoveAction(event.Name)
-			} else if event.Op&(fsnotify.Write|fsnotify.Create) != 0 {
+			case dispatchFileAddition:
 				fwlog.Info("Installing policy", "file", event.Name)
 				policyops <- newInstallAction(event.Name)
+			case dispatchDirectoryAddition:
+				fwlog.Info("Tracking sub-directory", "directory", event.Name)
+				if addErr := watcher.Add(event.Name); addErr != nil {
+					fwlog.Error(addErr, "Unable to watch sub-directory")
+				}
+				fwlog.Info("Installing policies in sub-directory", "directory", event.Name)
+				if instErr := InstallPoliciesInDir(event.Name, policyops, watcher); instErr != nil {
+					fwlog.Error(instErr, "Error installing policies in sub-directory")
+				}
+			case dispatchSymlink:
+				fwlog.Info("Ignoring symlink", "symlink", event.Name)
+			case dispatchUnkown:
+				fwlog.Info("Ignoring file due to unknown state", "file", event.Name)
 			}
-			// TODO(jaosorior): handle rename
 		case err, ok := <-watcher.Errors:
 			if !ok {
 				fwlog.Info("WARNING: the fsnotify channel has been closed or is empty")
@@ -124,11 +137,15 @@ func InstallPolicies(modulePath string, sh semodule.Handler, ds datastore.DataSt
 	}
 }
 
-func InstallPoliciesInDir(mpath string, policyops chan PolicyAction) error {
+func InstallPoliciesInDir(mpath string, policyops chan PolicyAction, watcher *fsnotify.Watcher) error {
 	return filepath.Walk(mpath, func(path string, info os.FileInfo, err error) error {
-		if info == nil || info.IsDir() {
+		if info == nil {
 			return nil
 		}
+		if watcher != nil && info.IsDir() {
+			return watcher.Add(path)
+		}
+
 		policyops <- newInstallAction(path)
 		return nil
 	})
