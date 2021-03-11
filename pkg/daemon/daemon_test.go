@@ -117,6 +117,7 @@ func TestDaemon(t *testing.T) {
 	defer ds.Close()
 
 	go Daemon(&config, moddir, sh, ds, done, zapr.NewLogger(logger))
+	defer close(done)
 
 	t.Run("Should install a policy", func(t *testing.T) {
 		installPolicy(moduleName, moddir, t)
@@ -246,7 +247,7 @@ func TestDaemon(t *testing.T) {
 		// We use the previously installed module
 		removePolicy(moduleName, moddir, t)
 
-		// Module has to be installed... eventually
+		// Module has to be removed... eventually
 		err := backoff.Retry(func() error {
 			if sh.IsModuleInstalled(moduleName) {
 				return errModuleInstalled
@@ -306,6 +307,122 @@ func TestDaemon(t *testing.T) {
 		}
 		if int(stat.Gid) != os.Getgid() {
 			t.Fatalf("wrong GID, got %d expected %d", int(stat.Gid), os.Getgid())
+		}
+	})
+
+	subdirPath := filepath.Join(moddir, "sub-dir")
+	subdirPolicy := "subdirpolicy"
+
+	t.Run("Module should track a policy in sub-directory", func(t *testing.T) {
+		if err := os.Mkdir(subdirPath, 0700); err != nil {
+			t.Fatalf("Unable to create sub-directory: %s", err)
+		}
+		installPolicy(subdirPolicy, subdirPath, t)
+
+		// Module has to be installed... eventually
+		err := backoff.Retry(func() error {
+			if !sh.IsModuleInstalled(subdirPolicy) {
+				return errModuleNotInstalled
+			}
+			return nil
+		}, backoff.WithMaxRetries(backoff.NewConstantBackOff(defaultPollBackOff), 5))
+		if err != nil {
+			t.Fatalf("%s", err)
+		}
+	})
+
+	t.Run("Module should stop tracking a policy in sub-directory", func(t *testing.T) {
+		os.RemoveAll(subdirPath)
+
+		// Module has to be removed... eventually
+		err := backoff.Retry(func() error {
+			if sh.IsModuleInstalled(subdirPolicy) {
+				return errModuleInstalled
+			}
+			return nil
+		}, backoff.WithMaxRetries(backoff.NewConstantBackOff(defaultPollBackOff), 5))
+		if err != nil {
+			t.Fatalf("%s", err)
+		}
+	})
+}
+
+func TestDaemonWithSubdir(t *testing.T) {
+	done := make(chan bool)
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		t.Fatalf("Couldn't initialize logger: %s", err)
+	}
+
+	moddir, err := ioutil.TempDir("", "semodtest")
+	if err != nil {
+		t.Fatalf("Error creating temporary directory: %s", err)
+	}
+	defer os.RemoveAll(moddir) // clean up
+
+	dir, err := ioutil.TempDir("", "selinuxd")
+	if err != nil {
+		t.Fatalf("Error creating temporary directory: %s", err)
+	}
+	sockpath := filepath.Join(dir, "selinuxd.sock")
+	dbpath := filepath.Join(dir, "selinuxd.db")
+	defer os.RemoveAll(dir) // clean up
+
+	config := SelinuxdOptions{
+		StatusServerConfig: StatusServerConfig{
+			Path: sockpath,
+			UID:  os.Getuid(),
+			GID:  os.Getuid(),
+		},
+		StatusDBPath: dbpath,
+	}
+
+	sh := test.NewSEModuleTestHandler()
+
+	ds, err := datastore.NewTestCountedDS(config.StatusDBPath)
+	if err != nil {
+		t.Fatalf("Unable to get R/W datastore: %s", err)
+	}
+	defer ds.Close()
+
+	subdirPath := filepath.Join(moddir, "sub-dir")
+	subdirPolicy := "subdirpolicy"
+
+	t.Run("Install policy before daemon runs", func(t *testing.T) {
+		if err := os.Mkdir(subdirPath, 0700); err != nil {
+			t.Fatalf("Unable to create sub-directory: %s", err)
+		}
+		installPolicy(subdirPolicy, subdirPath, t)
+	})
+
+	go Daemon(&config, moddir, sh, ds, done, zapr.NewLogger(logger))
+	defer close(done)
+
+	t.Run("Module should track a policy in pre-existing sub-directory", func(t *testing.T) {
+		// Module has to be installed... eventually
+		err := backoff.Retry(func() error {
+			if !sh.IsModuleInstalled(subdirPolicy) {
+				return errModuleNotInstalled
+			}
+			return nil
+		}, backoff.WithMaxRetries(backoff.NewConstantBackOff(defaultPollBackOff), 5))
+		if err != nil {
+			t.Fatalf("%s", err)
+		}
+	})
+
+	t.Run("Module should stop tracking a policy in sub-directory", func(t *testing.T) {
+		os.RemoveAll(subdirPath)
+
+		// Module has to be removed... eventually
+		err := backoff.Retry(func() error {
+			if sh.IsModuleInstalled(subdirPolicy) {
+				return errModuleInstalled
+			}
+			return nil
+		}, backoff.WithMaxRetries(backoff.NewConstantBackOff(defaultPollBackOff), 5))
+		if err != nil {
+			t.Fatalf("%s", err)
 		}
 	})
 }

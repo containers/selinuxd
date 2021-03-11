@@ -1,6 +1,7 @@
 package test
 
 import (
+	"path/filepath"
 	"sync"
 
 	"github.com/JAORMX/selinuxd/pkg/semodule"
@@ -23,11 +24,7 @@ func (smt *SEModuleTestHandler) SetAutoCommit(bool) {
 }
 
 func (smt *SEModuleTestHandler) Install(modulePath string) error {
-	baseFile, err := utils.GetCleanBase(modulePath)
-	if err != nil {
-		// nolint:wrapcheck
-		return err
-	}
+	baseFile := filepath.Base(modulePath)
 	module := utils.GetFileWithoutExtension(baseFile)
 	// Only install module if it's not already there.
 	if smt.IsModuleInstalled(module) {
