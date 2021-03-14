@@ -62,8 +62,3 @@ jobs:
         with:
           name: selinux-policy
           path: selinuxd.cil
-      - name: Verify generated selinux policy
-        run: diff selinuxd.cil security/selinuxd.cil
-      - name: Output seliinux policy instructions on failure
-        run: echo "The generated policy 'selinuxd.cil' differs from what's staged in 'security/selinuxd.cil'. Please update it."
-        if: ${{ failure() }}
