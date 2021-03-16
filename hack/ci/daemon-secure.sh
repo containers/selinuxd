@@ -51,7 +51,6 @@ podman run \
     -d \
     --security-opt seccomp=unconfined \
     --security-opt label=type:selinuxd.process \
-    --security-opt label=level:s0 \
     -v /sys/fs/selinux:/sys/fs/selinux \
     -v /var/lib/selinux:/var/lib/selinux \
     -v /etc/selinux.d:/etc/selinux.d \
