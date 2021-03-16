@@ -28,7 +28,7 @@ echo "Spawning VM"
 make vagrant-up
 
 echo "Spawning selinuxd in VM"
-$RUN hack/ci/daemon.sh
+$RUN hack/ci/daemon-and-trace.sh
 
 echo "Running e2e tests"
 $RUN hack/ci/e2e.sh
