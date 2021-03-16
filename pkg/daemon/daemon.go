@@ -119,12 +119,7 @@ func watchFiles(watcher *fsnotify.Watcher, policyops chan PolicyAction, logger l
 // nolint: lll
 func InstallPolicies(modulePath string, sh semodule.Handler, ds datastore.DataStore, policyops chan PolicyAction, logger logr.Logger) {
 	ilog := logger.WithName("policy-installer")
-	for {
-		action, ok := <-policyops
-		if !ok {
-			ilog.Info("The policy operations channel is now closed")
-			return // TODO(jaosorior): Actually signal exit
-		}
+	for action := range policyops {
 		if actionOut, err := action.do(modulePath, sh, ds); err != nil {
 			ilog.Error(err, "Failed applying operation on policy", "operation", action, "output", actionOut)
 		} else {
@@ -135,6 +130,7 @@ func InstallPolicies(modulePath string, sh semodule.Handler, ds datastore.DataSt
 			ilog.Info(actionOut, "operation", action)
 		}
 	}
+	ilog.Info("The policy operations channel is now closed")
 }
 
 func InstallPoliciesInDir(mpath string, policyops chan PolicyAction, watcher *fsnotify.Watcher) error {
@@ -144,6 +140,9 @@ func InstallPoliciesInDir(mpath string, policyops chan PolicyAction, watcher *fs
 		}
 		if watcher != nil && info.IsDir() {
 			return watcher.Add(path)
+		} else if info.IsDir() {
+			// ignore directories
+			return nil
 		}
 
 		policyops <- newInstallAction(path)
