@@ -33,7 +33,7 @@ jobs:
       - name: Boot Virtual Machine
         run: make vagrant-up
       - name: Run selinuxd
-        run: $RUN hack/ci/daemon.sh
+        run: $RUN hack/ci/daemon-and-trace.sh
       - name: Run E2E tests
         run: $RUN hack/ci/e2e.sh
       - name: Get logs
@@ -62,3 +62,38 @@ jobs:
         with:
           name: selinux-policy
           path: selinuxd.cil
+
+  secure-e2e:
+    needs: e2e-image
+    runs-on: macos-10.15
+    timeout-minutes: 80
+    env:
+      RUN: ./hack/ci/run.sh
+      IMG: quay.io/jaosorior/selinuxd-fedora:latest
+      CONTAINER_NAME: selinuxd
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: fedora-image-tar
+          path: .
+      - name: Boot Virtual Machine
+        run: make vagrant-up
+      - name: Run selinuxd
+        run: $RUN hack/ci/daemon-secure.sh
+      - name: Run E2E tests
+        run: $RUN hack/ci/e2e.sh
+      - name: Get logs
+        run: $RUN hack/ci/logs.sh
+        if: ${{ always() }}
+      - name: Fetch selinuxd logs
+        run: $RUN cat ${{ env.CONTAINER_NAME }}.logs > ${{ env.CONTAINER_NAME }}.logs
+        if: ${{ always() }}
+      - uses: actions/upload-artifact@v2
+        with:
+          name: e2e-fedora-logs
+          path: ${{ env.CONTAINER_NAME }}.logs
+        if: ${{ always() }}
+      - name: Stop selinuxd
+        run: $RUN podman stop ${{ env.CONTAINER_NAME }}
+        if: ${{ always() }}
