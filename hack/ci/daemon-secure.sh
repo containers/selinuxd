@@ -45,11 +45,10 @@ cp security/selinuxd.cil /etc/selinux.d/
 semodule -i security/selinuxd.cil
 
 # run daemon
-# FIXME(jaosorior): Add Seccomp profile
 podman run \
     --name "$CONTAINER_NAME" \
     -d \
-    --security-opt seccomp=unconfined \
+    --security-opt seccomp=$PWD/security/selinuxd-seccomp.json \
     --security-opt label=type:selinuxd.process \
     --security-opt label=level:s0 \
     -v /sys/fs/selinux:/sys/fs/selinux \
