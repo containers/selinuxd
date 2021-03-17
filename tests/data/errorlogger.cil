@@ -1,0 +1,6 @@
+(block errorlogger
+    (blockinherit container)
+    (allow process var_log_t ( dir ( open read getattr lock search ioctl add_name remove_name write ))) 
+    (allow process var_log_t ( file ( getattr read write append ioctl lock map open create  ))) 
+    (allow process var_log_t ( sock_file ( getattr read write append open  ))) 
+)

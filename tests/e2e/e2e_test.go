@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/JAORMX/selinuxd/pkg/datastore"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -99,6 +100,53 @@ var _ = Describe("E2e", func() {
 			It("Reports an installed status", func() {
 				By("Waiting for the policy to be installed")
 				policyEventually(policy).Should(MatchRegexp(`status.*Installed`))
+			})
+		})
+
+		When("Installing multiple policies", func() {
+			policies := map[string]string{
+				"testport":               string(datastore.InstalledStatus),
+				"badtestport":            string(datastore.FailedStatus),
+				"errorlogger":            string(datastore.InstalledStatus),
+				"selinuxd":               string(datastore.InstalledStatus),
+				"test_append_avc":        string(datastore.InstalledStatus),
+				"test_basic":             string(datastore.InstalledStatus),
+				"test_default":           string(datastore.InstalledStatus),
+				"test_devices":           string(datastore.InstalledStatus),
+				"test_fullnetworkaccess": string(datastore.InstalledStatus),
+				"test_nocontext":         string(datastore.InstalledStatus),
+				"test_ports":             string(datastore.InstalledStatus),
+				"test_ttyaccess":         string(datastore.InstalledStatus),
+				"test_virtaccess":        string(datastore.InstalledStatus),
+				"test_xaccess":           string(datastore.InstalledStatus),
+			}
+			BeforeEach(func() {
+				for pol := range policies {
+					pname := fmt.Sprintf("%s.cil", pol)
+					installPolicyFromReference(
+						filepath.Join("../data/", pname),
+						filepath.Join(selinuxdDir, pname),
+					)
+				}
+			})
+
+			AfterEach(func() {
+				for pol := range policies {
+					pname := fmt.Sprintf("%s.cil", pol)
+					removePolicyIfPossible(filepath.Join(selinuxdDir, pname))
+				}
+			})
+
+			It("Installs all the policies", func() {
+				By("Waiting policies to be installed")
+				for pol, status := range policies {
+					policyEventually(pol).Should(MatchRegexp(fmt.Sprintf(`status.*%s`, status)))
+				}
+				By("Listing all policies to ensure they're all there")
+				pollist := selinuxdctl("status")
+				for pol := range policies {
+					Expect(pollist).Should(ContainSubstring(pol))
+				}
 			})
 		})
 	})
