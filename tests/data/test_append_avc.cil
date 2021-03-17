@@ -1,0 +1,8 @@
+(block test_append_avc
+    (blockinherit container)
+    (allow process process ( capability ( audit_write chown dac_override fowner fsetid kill mknod net_bind_service net_raw setfcap setgid setpcap setuid sys_chroot ))) 
+
+    (allow process tmp_t ( file ( write ))) 
+    (allow process tmp_t ( dir ( add_name ))) 
+    (allow process etc_t ( file ( open getattr read ))) 
+)
