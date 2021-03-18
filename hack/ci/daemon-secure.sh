@@ -25,6 +25,7 @@ mkdir -p /etc/selinux.d
 podman run \
     --name policy-copy \
     --privileged \
+    -v /etc/selinux:/etc/selinux \
     -v /etc/selinux.d:/etc/selinux.d \
     --entrypoint /bin/bash \
     $IMG -c 'cp /usr/share/selinuxd/templates/* /etc/selinux.d/'
@@ -35,6 +36,7 @@ podman run \
     --privileged \
     -v /sys/fs/selinux:/sys/fs/selinux \
     -v /var/lib/selinux:/var/lib/selinux \
+    -v /etc/selinux:/etc/selinux \
     -v /etc/selinux.d:/etc/selinux.d \
     $IMG oneshot
 
@@ -52,5 +54,6 @@ podman run \
     --security-opt label=type:selinuxd.process \
     -v /sys/fs/selinux:/sys/fs/selinux \
     -v /var/lib/selinux:/var/lib/selinux \
+    -v /etc/selinux:/etc/selinux \
     -v /etc/selinux.d:/etc/selinux.d \
     $IMG daemon
