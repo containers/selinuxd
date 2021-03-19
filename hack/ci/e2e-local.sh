@@ -15,6 +15,8 @@
 
 set -euo pipefail
 
+export E2E_SECURE=${E2E_SECURE:-""}
+
 make fedora-image
 
 # Ensure image.tar isn't there
@@ -27,8 +29,14 @@ RUN=./hack/ci/run.sh
 echo "Spawning VM"
 make vagrant-up
 
-echo "Spawning selinuxd in VM"
-$RUN hack/ci/daemon-and-trace.sh
+
+if [ -z "$E2E_SECURE" ]; then
+    echo "Spawning selinuxd in VM with tracing"
+    $RUN hack/ci/daemon-and-trace.sh
+else
+    echo "Spawning selinuxd in VM with security features enabled"
+    $RUN hack/ci/daemon-secure.sh
+fi
 
 echo "Running e2e tests"
 $RUN hack/ci/e2e.sh
