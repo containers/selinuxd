@@ -4,7 +4,7 @@ on: [push, pull_request]
 jobs:
   build-fedora:
     name: Build Fedora image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
 
     steps:
     - uses: actions/checkout@v2
@@ -19,7 +19,7 @@ jobs:
 
   build-centos:
     name: Build CentOS image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
 
     steps:
     - uses: actions/checkout@v2
