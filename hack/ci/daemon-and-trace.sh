@@ -41,4 +41,4 @@ podman run \
     $IMG daemon
 
 # Should create selinuxd.cil
-podman inspect "$CONTAINER_NAME" | udica selinuxd
+podman inspect "$CONTAINER_NAME" | udica selinuxd || /bin/true
