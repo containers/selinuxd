@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM registry.fedoraproject.org/fedora-minimal:33 AS build
+FROM registry.fedoraproject.org/fedora-minimal:34 AS build
 USER root
 WORKDIR /work
 
@@ -26,7 +26,7 @@ ADD . /work
 
 RUN make
 
-FROM registry.fedoraproject.org/fedora-minimal:33
+FROM registry.fedoraproject.org/fedora-minimal:34
 
 # TODO(jaosorior): See if we can run this without root
 USER root
