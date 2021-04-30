@@ -13,7 +13,7 @@ ifeq ($(OS_NAME), Darwin)
 endif
 GOLANGCI_LINT_URL=https://github.com/golangci/golangci-lint/releases/download/v$(GOLANGCI_LINT_VERSION)/golangci-lint-$(GOLANGCI_LINT_VERSION)-$(GOLANGCI_LINT_OS)-amd64.tar.gz
 
-CONTAINTER_RUNTIME?=podman
+CONTAINER_RUNTIME?=podman
 
 IMAGE_NAME=selinuxd
 IMAGE_TAG=latest
@@ -50,7 +50,7 @@ run: $(BIN) $(POLICYDIR)
 
 .PHONY: runc
 runc: image $(POLICYDIR)
-	sudo $(CONTAINTER_RUNTIME) run -ti \
+	sudo $(CONTAINER_RUNTIME) run -ti \
 		--privileged \
 		-v /sys/fs/selinux:/sys/fs/selinux \
 		-v /var/lib/selinux:/var/lib/selinux \
@@ -90,25 +90,25 @@ image: default-image centos-image fedora-image
 
 .PHONY: default-image
 default-image:
-	$(CONTAINTER_RUNTIME) build -f images/Dockerfile.centos -t $(IMAGE_REPO) .
+	$(CONTAINER_RUNTIME) build -f images/Dockerfile.centos -t $(IMAGE_REPO) .
 
 .PHONY: centos-image
 centos-image:
-	$(CONTAINTER_RUNTIME) build -f images/Dockerfile.centos -t $(CENTOS_IMAGE_REPO) .
+	$(CONTAINER_RUNTIME) build -f images/Dockerfile.centos -t $(CENTOS_IMAGE_REPO) .
 
 .PHONY: fedora-image
 fedora-image:
-	$(CONTAINTER_RUNTIME) build -f images/Dockerfile.fedora -t $(FEDORA_IMAGE_REPO) .
+	$(CONTAINER_RUNTIME) build -f images/Dockerfile.fedora -t $(FEDORA_IMAGE_REPO) .
 
 .PHONY: push
 push:
-	$(CONTAINTER_RUNTIME) push $(IMAGE_REPO)
+	$(CONTAINER_RUNTIME) push $(IMAGE_REPO)
 
 .PHONY: vagrant-up
 vagrant-up: ## Boot the vagrant based test VM
 	if [ ! -f image.tar ]; then \
-		make image IMAGE=$(IMAGE) && \
-		$(CONTAINER_RUNTIME) save -o image.tar $(IMAGE); \
+		make fedora-image && \
+		$(CONTAINER_RUNTIME) save -o image.tar $(FEDORA_IMAGE_REPO); \
 	fi
 	ln -sf hack/ci/Vagrantfile .
 	# Retry in case provisioning failed because of some temporarily unavailable
