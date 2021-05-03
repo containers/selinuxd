@@ -19,9 +19,11 @@ static void semanage_error_callback(void *varg, semanage_handle_t *handle, const
     va_end(ap);
 }
 
-static void cil_log_callback(int level, char *message)
+static void cil_log_callback(int level, const char *message)
 {
-	LogWrapper(message, level);
+    // We REALLY need to make sure we don't modify the message.
+    char *castedmsg = (char *)message;
+    LogWrapper(castedmsg, level);
 }
 
 void wrap_set_cb(semanage_handle_t *handle, void *arg)

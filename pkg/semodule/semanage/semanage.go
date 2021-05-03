@@ -82,6 +82,7 @@ func (f *globalErrorFlusher) flush() string {
 
 //export LogWrapper
 func LogWrapper(cmsg *C.char, level C.int) {
+	// Note that we should NOT modify the incoming message.
 	msg := C.GoString(cmsg)
 
 	// swtich on the level and do err/fail/info
