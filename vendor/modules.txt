@@ -104,8 +104,6 @@ github.com/spf13/pflag
 # github.com/spf13/viper v1.7.1
 ## explicit
 github.com/spf13/viper
-# github.com/stretchr/testify v1.6.1
-## explicit
 # github.com/subosito/gotenv v1.2.0
 github.com/subosito/gotenv
 # go.etcd.io/bbolt v1.3.5
@@ -114,9 +112,8 @@ go.etcd.io/bbolt
 # go.uber.org/atomic v1.7.0
 go.uber.org/atomic
 # go.uber.org/multierr v1.6.0
-## explicit
 go.uber.org/multierr
-# go.uber.org/zap v1.16.0
+# go.uber.org/zap v1.17.0
 ## explicit
 go.uber.org/zap
 go.uber.org/zap/buffer
@@ -163,5 +160,3 @@ gopkg.in/ini.v1
 gopkg.in/tomb.v1
 # gopkg.in/yaml.v2 v2.4.0
 gopkg.in/yaml.v2
-# gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
-## explicit
