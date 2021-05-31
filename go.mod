@@ -3,7 +3,7 @@ module github.com/JAORMX/selinuxd
 go 1.15
 
 require (
-	github.com/cenkalti/backoff/v4 v4.1.0
+	github.com/cenkalti/backoff/v4 v4.1.1
 	github.com/go-logr/logr v0.4.0
 	github.com/go-logr/zapr v0.4.0
 	github.com/gorilla/mux v1.8.0
