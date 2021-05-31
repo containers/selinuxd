@@ -13,7 +13,7 @@ require (
 	github.com/mitchellh/mapstructure v1.4.0 // indirect
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.16.3
-	github.com/onsi/gomega v1.11.0
+	github.com/onsi/gomega v1.13.0
 	github.com/pelletier/go-toml v1.8.1 // indirect
 	github.com/spf13/afero v1.4.1 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
@@ -22,7 +22,6 @@ require (
 	github.com/spf13/viper v1.7.1
 	go.etcd.io/bbolt v1.3.5
 	go.uber.org/zap v1.17.0
-	golang.org/x/text v0.3.4 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/fsnotify.v1 v1.4.7
 	gopkg.in/ini.v1 v1.62.0 // indirect
