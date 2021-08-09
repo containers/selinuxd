@@ -15,7 +15,7 @@ require (
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/viper v1.8.1
 	go.etcd.io/bbolt v1.3.6
-	go.uber.org/zap v1.18.1
+	go.uber.org/zap v1.19.0
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/fsnotify.v1 v1.4.7
 )
