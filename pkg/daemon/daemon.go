@@ -6,8 +6,8 @@ import (
 
 	"github.com/JAORMX/selinuxd/pkg/datastore"
 	"github.com/JAORMX/selinuxd/pkg/semodule"
+	"github.com/fsnotify/fsnotify"
 	"github.com/go-logr/logr"
-	"gopkg.in/fsnotify.v1"
 )
 
 type SelinuxdOptions struct {

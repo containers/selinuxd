@@ -3,7 +3,7 @@ package daemon
 import (
 	"os"
 
-	"gopkg.in/fsnotify.v1"
+	"github.com/fsnotify/fsnotify"
 )
 
 type fileOperationDispatch uint8

@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/cenkalti/backoff/v4 v4.1.1
+	github.com/fsnotify/fsnotify v1.4.9
 	github.com/go-logr/logr v0.4.0
 	github.com/go-logr/zapr v0.4.0
 	github.com/gorilla/mux v1.8.0
@@ -17,5 +18,4 @@ require (
 	go.etcd.io/bbolt v1.3.6
 	go.uber.org/zap v1.19.0
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
-	gopkg.in/fsnotify.v1 v1.4.7
 )
