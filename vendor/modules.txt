@@ -35,7 +35,7 @@ github.com/mattn/go-runewidth
 # github.com/mitchellh/go-homedir v1.1.0
 ## explicit
 github.com/mitchellh/go-homedir
-# github.com/mitchellh/mapstructure v1.4.1
+# github.com/mitchellh/mapstructure v1.4.2
 github.com/mitchellh/mapstructure
 # github.com/nxadm/tail v1.4.8
 github.com/nxadm/tail
@@ -79,12 +79,12 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# github.com/pelletier/go-toml v1.9.3
+# github.com/pelletier/go-toml v1.9.4
 github.com/pelletier/go-toml
 # github.com/spf13/afero v1.6.0
 github.com/spf13/afero
 github.com/spf13/afero/mem
-# github.com/spf13/cast v1.3.1
+# github.com/spf13/cast v1.4.1
 github.com/spf13/cast
 # github.com/spf13/cobra v1.2.1
 ## explicit
@@ -93,9 +93,14 @@ github.com/spf13/cobra
 github.com/spf13/jwalterweatherman
 # github.com/spf13/pflag v1.0.5
 github.com/spf13/pflag
-# github.com/spf13/viper v1.8.1
+# github.com/spf13/viper v1.9.0
 ## explicit
 github.com/spf13/viper
+github.com/spf13/viper/internal/encoding
+github.com/spf13/viper/internal/encoding/hcl
+github.com/spf13/viper/internal/encoding/json
+github.com/spf13/viper/internal/encoding/toml
+github.com/spf13/viper/internal/encoding/yaml
 # github.com/subosito/gotenv v1.2.0
 github.com/subosito/gotenv
 # go.etcd.io/bbolt v1.3.6
@@ -113,11 +118,11 @@ go.uber.org/zap/internal/bufferpool
 go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
 go.uber.org/zap/zapcore
-# golang.org/x/net v0.0.0-20210428140749-89ef3d95e781
+# golang.org/x/net v0.0.0-20210503060351-7fd8e65b6420
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/html/charset
-# golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c
+# golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 # golang.org/x/text v0.3.6
@@ -141,7 +146,7 @@ golang.org/x/text/transform
 golang.org/x/text/unicode/norm
 # gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c
 ## explicit
-# gopkg.in/ini.v1 v1.62.0
+# gopkg.in/ini.v1 v1.63.2
 gopkg.in/ini.v1
 # gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
 gopkg.in/tomb.v1
