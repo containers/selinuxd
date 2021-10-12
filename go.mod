@@ -14,7 +14,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.16.0
 	github.com/spf13/cobra v1.2.1
-	github.com/spf13/viper v1.8.1
+	github.com/spf13/viper v1.9.0
 	go.etcd.io/bbolt v1.3.6
 	go.uber.org/zap v1.19.1
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
