@@ -50,7 +50,7 @@ semodule -i security/selinuxd.cil
 podman run \
     --name "$CONTAINER_NAME" \
     -d \
-    --security-opt seccomp=$PWD/security/selinuxd-seccomp-fedora-34.json \
+    --security-opt seccomp=$PWD/security/selinuxd-seccomp-fedora-35.json \
     --security-opt label=type:selinuxd.process \
     -v /sys/fs/selinux:/sys/fs/selinux \
     -v /var/lib/selinux:/var/lib/selinux \
