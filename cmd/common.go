@@ -36,7 +36,7 @@ const (
 func getLogger() (logr.Logger, error) {
 	logger, err := zap.NewProduction()
 	if err != nil {
-		return nil, fmt.Errorf("error creating logger: %w", err)
+		return logr.Logger{}, fmt.Errorf("error creating logger: %w", err)
 	}
 	logIf := zapr.NewLogger(logger)
 	// NOTE(jaosorior): While this may return errors, they're mostly
