@@ -15,9 +15,9 @@
 
 set -euo pipefail
 
-set -x
+source /etc/profile.d/selinuxd-env.sh
 
-source hack/ci/env.sh
+set -x
 
 mkdir -p /etc/selinux.d
 
@@ -40,17 +40,20 @@ podman run \
     -v /etc/selinux.d:/etc/selinux.d \
     $IMG oneshot
 
-cp security/selinuxd.cil /etc/selinux.d/
-
 # Install selinuxd policy
 # FIXME(jaosorior): Replace this call with oneshot command
 semodule -i security/selinuxd.cil
+
+SECCOMP_FLAG=""
+if [ "$OS" == "fedora" ]; then
+    SECCOMP_FLAG="--security-opt seccomp=$PWD/security/selinuxd-seccomp-fedora-35.json"
+fi
 
 # run daemon
 podman run \
     --name "$CONTAINER_NAME" \
     -d \
-    --security-opt seccomp=$PWD/security/selinuxd-seccomp-fedora-35.json \
+    $SECCOMP_FLAG \
     --security-opt label=type:selinuxd.process \
     -v /sys/fs/selinux:/sys/fs/selinux \
     -v /var/lib/selinux:/var/lib/selinux \

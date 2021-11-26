@@ -7,28 +7,35 @@ on:
 jobs:
   e2e-image:
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        base: ["fedora", "centos"]
     steps:
       - uses: actions/checkout@v2
-      - run: make fedora-image
-      - run: podman save -o image.tar quay.io/jaosorior/selinuxd-fedora:latest
+      - run: make ${{ matrix.base }}-image
+      - run: podman save --format=docker-archive -o image.tar quay.io/jaosorior/selinuxd-${{ matrix.base }}:latest
       - uses: actions/upload-artifact@v2
         with:
-          name: fedora-image-tar
+          name: ${{ matrix.base }}-image-tar
           path: image.tar
 
   e2e:
     needs: e2e-image
     runs-on: macos-10.15
     timeout-minutes: 80
+    strategy:
+      matrix:
+        base: ["fedora", "centos"]
     env:
       RUN: ./hack/ci/run.sh
-      IMG: quay.io/jaosorior/selinuxd-fedora:latest
+      IMG: quay.io/jaosorior/selinuxd-${{ matrix.base }}:latest
       CONTAINER_NAME: selinuxd
+      TEST_OS: ${{ matrix.base }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
         with:
-          name: fedora-image-tar
+          name: ${{ matrix.base }}-image-tar
           path: .
       - name: Boot Virtual Machine
         run: make vagrant-up
@@ -44,7 +51,7 @@ jobs:
         if: ${{ always() }}
       - uses: actions/upload-artifact@v2
         with:
-          name: e2e-fedora-logs
+          name: e2e-${{ matrix.base }}-logs
           path: ${{ env.CONTAINER_NAME }}.logs
         if: ${{ always() }}
       - name: Stop selinuxd
@@ -54,10 +61,12 @@ jobs:
         run: $RUN sleep 30
       - name: Fetch seccomp profile
         run: $RUN cat /tmp/selinuxd-seccomp.json | python -m json.tool > selinuxd-seccomp.json
+        if: matrix.base == 'fedora'
       - uses: actions/upload-artifact@v2
         with:
           name: seccomp-profile
           path: selinuxd-seccomp.json
+        if: matrix.base == 'fedora'
       - name: Fetch selinux policy
         run: $RUN cat selinuxd.cil > selinuxd.cil
       - uses: actions/upload-artifact@v2
@@ -69,16 +78,20 @@ jobs:
     needs: e2e-image
     runs-on: macos-10.15
     timeout-minutes: 80
+    strategy:
+      matrix:
+        base: ["fedora", "centos"]
     env:
       RUN: ./hack/ci/run.sh
-      IMG: quay.io/jaosorior/selinuxd-fedora:latest
+      IMG: quay.io/jaosorior/selinuxd-${{ matrix.base }}:latest
       CONTAINER_NAME: selinuxd
+      TEST_OS: ${{ matrix.base }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
         with:
-          name: fedora-image-tar
-          path: .
+          name: ${{ matrix.base }}-image-tar
+          path: image.tar
       - name: Boot Virtual Machine
         run: make vagrant-up
       - name: Run selinuxd
@@ -93,7 +106,7 @@ jobs:
         if: ${{ always() }}
       - uses: actions/upload-artifact@v2
         with:
-          name: e2e-fedora-logs
+          name: e2e-${{ matrix.base }}-logs
           path: ${{ env.CONTAINER_NAME }}.logs
         if: ${{ always() }}
       - name: Stop selinuxd

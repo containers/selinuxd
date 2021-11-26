@@ -15,7 +15,7 @@
 
 set -euo pipefail
 
-source hack/ci/env.sh
+source /etc/profile.d/selinuxd-env.sh
 
 mkdir -p /etc/selinux.d
 
