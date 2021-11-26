@@ -39,6 +39,8 @@ jobs:
           path: .
       - name: Boot Virtual Machine
         run: make vagrant-up
+      - name: Check if SELInux is enforcing
+        run: $RUN getenforce
       - name: Run selinuxd
         run: $RUN hack/ci/daemon-and-trace.sh
       - name: Run E2E tests
@@ -94,6 +96,8 @@ jobs:
           path: image.tar
       - name: Boot Virtual Machine
         run: make vagrant-up
+      - name: Check if SELInux is enforcing
+        run: $RUN getenforce
       - name: Run selinuxd
         run: $RUN hack/ci/daemon-secure.sh
       - name: Run E2E tests
