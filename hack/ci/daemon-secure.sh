@@ -60,3 +60,5 @@ podman run \
     -v /etc/selinux:/etc/selinux \
     -v /etc/selinux.d:/etc/selinux.d \
     $IMG daemon
+
+podman inspect "$CONTAINER_NAME"
