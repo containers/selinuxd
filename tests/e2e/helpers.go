@@ -22,7 +22,7 @@ var (
 
 const (
 	// timeout for selinuxd to report it's ready
-	selinuxdReadyTimeout float64 = 180
+	selinuxdReadyTimeout float64 = 240
 	// default time to wait for selinuxd do an operation
 	selinuxdTimeout = 5 * time.Minute
 	// default interval between operations
