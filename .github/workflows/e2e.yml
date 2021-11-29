@@ -41,6 +41,8 @@ jobs:
         run: make vagrant-up
       - name: Check if SELInux is enforcing
         run: $RUN getenforce
+      - name: Check if SELInux is enabled in podman
+        run: $RUN podman info --debug -f {{.Host.Security.SELinuxEnabled}}
       - name: Run selinuxd
         run: $RUN hack/ci/daemon-and-trace.sh
       - name: Run E2E tests
@@ -98,6 +100,8 @@ jobs:
         run: make vagrant-up
       - name: Check if SELInux is enforcing
         run: $RUN getenforce
+      - name: Check if SELInux is enabled in podman
+        run: $RUN podman info --debug -f {{.Host.Security.SELinuxEnabled}}
       - name: Run selinuxd
         run: $RUN hack/ci/daemon-secure.sh
       - name: Run E2E tests
