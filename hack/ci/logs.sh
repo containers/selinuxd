@@ -15,7 +15,7 @@
 
 set -euo pipefail
 
-source hack/ci/env.sh
+source /etc/profile.d/selinuxd-env.sh
 
 # NOTE(jaosorior): Added -t so we get readable timestamps.
 podman logs -t "$CONTAINER_NAME" > "$CONTAINER_NAME.logs"
