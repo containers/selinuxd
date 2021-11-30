@@ -136,10 +136,3 @@ https://github.com/kubernetes-sigs/security-profiles-operator) in order to do
 the heavy lifting of installing SELinux policies. The operator itself manages the policies
 as Kubernetes objects, and the daemon makes sure that they are actually installed in
 the nodes of the cluster.
-
-Looking for a home
-==================
-
-While this daemon is currently being developed in **JAORMX/selinuxd**, it would be better
-for this project to live elsewhere. If you have ideas on where would be an appropriate
-place for this. We are open to suggestions!
