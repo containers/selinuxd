@@ -23,8 +23,9 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/JAORMX/selinuxd/pkg/daemon"
 	"github.com/spf13/cobra"
+
+	"github.com/containers/selinuxd/pkg/daemon"
 )
 
 // isreadyCmd represents the is-ready command

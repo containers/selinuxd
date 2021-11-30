@@ -5,9 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/JAORMX/selinuxd/pkg/datastore"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/containers/selinuxd/pkg/datastore"
 )
 
 var _ = Describe("E2e", func() {

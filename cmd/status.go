@@ -26,9 +26,10 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/JAORMX/selinuxd/pkg/daemon"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
+
+	"github.com/containers/selinuxd/pkg/daemon"
 )
 
 // statusCmd represents the status command
