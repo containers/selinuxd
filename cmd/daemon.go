@@ -21,10 +21,11 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/spf13/cobra"
+
 	"github.com/containers/selinuxd/pkg/daemon"
 	"github.com/containers/selinuxd/pkg/datastore"
 	"github.com/containers/selinuxd/pkg/semodule/semanage"
-	"github.com/spf13/cobra"
 )
 
 // daemonCmd represents the daemon command

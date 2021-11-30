@@ -20,12 +20,13 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/go-logr/logr"
+	"github.com/spf13/cobra"
+
 	"github.com/containers/selinuxd/pkg/daemon"
 	"github.com/containers/selinuxd/pkg/datastore"
 	"github.com/containers/selinuxd/pkg/semodule"
 	"github.com/containers/selinuxd/pkg/semodule/semanage"
-	"github.com/go-logr/logr"
-	"github.com/spf13/cobra"
 )
 
 // oneshotCmd represents the oneshot command

@@ -4,10 +4,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/containers/selinuxd/pkg/datastore"
-	"github.com/containers/selinuxd/pkg/semodule"
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-logr/logr"
+
+	"github.com/containers/selinuxd/pkg/datastore"
+	"github.com/containers/selinuxd/pkg/semodule"
 )
 
 type SelinuxdOptions struct {
