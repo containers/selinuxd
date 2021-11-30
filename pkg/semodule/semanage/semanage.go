@@ -20,7 +20,7 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"github.com/JAORMX/selinuxd/pkg/semodule"
+	"github.com/containers/selinuxd/pkg/semodule"
 )
 
 var globLogger logr.Logger

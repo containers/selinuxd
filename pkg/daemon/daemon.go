@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/JAORMX/selinuxd/pkg/datastore"
-	"github.com/JAORMX/selinuxd/pkg/semodule"
+	"github.com/containers/selinuxd/pkg/datastore"
+	"github.com/containers/selinuxd/pkg/semodule"
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-logr/logr"
 )

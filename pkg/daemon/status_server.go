@@ -9,7 +9,7 @@ import (
 	"net/http/pprof"
 	"os"
 
-	"github.com/JAORMX/selinuxd/pkg/datastore"
+	"github.com/containers/selinuxd/pkg/datastore"
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 )

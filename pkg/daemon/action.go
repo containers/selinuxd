@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/JAORMX/selinuxd/pkg/datastore"
-	"github.com/JAORMX/selinuxd/pkg/semodule"
-	"github.com/JAORMX/selinuxd/pkg/utils"
+	"github.com/containers/selinuxd/pkg/datastore"
+	"github.com/containers/selinuxd/pkg/semodule"
+	"github.com/containers/selinuxd/pkg/utils"
 )
 
 type PolicyAction interface {

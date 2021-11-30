@@ -1,4 +1,4 @@
-module github.com/JAORMX/selinuxd
+module github.com/containers/selinuxd
 
 go 1.15
 

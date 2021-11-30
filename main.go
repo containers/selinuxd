@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/JAORMX/selinuxd/cmd"
+import "github.com/containers/selinuxd/cmd"
 
 func main() {
 	cmd.Execute()

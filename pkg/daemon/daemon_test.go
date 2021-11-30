@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/JAORMX/selinuxd/pkg/datastore"
-	"github.com/JAORMX/selinuxd/pkg/semodule/test"
+	"github.com/containers/selinuxd/pkg/datastore"
+	"github.com/containers/selinuxd/pkg/semodule/test"
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"

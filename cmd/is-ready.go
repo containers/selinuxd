@@ -23,7 +23,7 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/JAORMX/selinuxd/pkg/daemon"
+	"github.com/containers/selinuxd/pkg/daemon"
 	"github.com/spf13/cobra"
 )
 

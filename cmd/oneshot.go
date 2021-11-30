@@ -20,10 +20,10 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/JAORMX/selinuxd/pkg/daemon"
-	"github.com/JAORMX/selinuxd/pkg/datastore"
-	"github.com/JAORMX/selinuxd/pkg/semodule"
-	"github.com/JAORMX/selinuxd/pkg/semodule/semanage"
+	"github.com/containers/selinuxd/pkg/daemon"
+	"github.com/containers/selinuxd/pkg/datastore"
+	"github.com/containers/selinuxd/pkg/semodule"
+	"github.com/containers/selinuxd/pkg/semodule/semanage"
 	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
 )

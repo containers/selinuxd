@@ -21,9 +21,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/JAORMX/selinuxd/pkg/daemon"
-	"github.com/JAORMX/selinuxd/pkg/datastore"
-	"github.com/JAORMX/selinuxd/pkg/semodule/semanage"
+	"github.com/containers/selinuxd/pkg/daemon"
+	"github.com/containers/selinuxd/pkg/datastore"
+	"github.com/containers/selinuxd/pkg/semodule/semanage"
 	"github.com/spf13/cobra"
 )
 
