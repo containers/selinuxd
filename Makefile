@@ -4,6 +4,8 @@ POLICYDIR=/etc/selinux.d
 
 SRC=$(shell find . -name "*.go")
 
+GO?=go
+
 # External Helper variables
 
 GOLANGCI_LINT_VERSION=1.33.0
@@ -35,15 +37,15 @@ all: build
 build: $(BIN)
 
 $(BIN): $(BINDIR) $(SRC) pkg/semodule/semanage/callbacks.c
-	go build -o $(BIN) .
+	$(GO) build -o $(BIN) .
 
 .PHONY: test
 test:
-	go test -race github.com/containers/selinuxd/pkg/...
+	$(GO) test -race github.com/containers/selinuxd/pkg/...
 
 .PHONY: e2e
 e2e:
-	go test ./tests/e2e -timeout 40m -v --ginkgo.v
+	$(GO) test ./tests/e2e -timeout 40m -v --ginkgo.v
 
 
 .PHONY: run
@@ -70,7 +72,7 @@ verify: mod-verify verify-go-lint ## Run code lint checks
 
 .PHONY: mod-verify
 mod-verify:
-	@go mod verify
+	@$(GO) mod verify
 
 .PHONY: verify-go-lint
 verify-go-lint: golangci-lint ## Verify the golang code by linting
