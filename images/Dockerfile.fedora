@@ -13,18 +13,25 @@
 # limitations under the License.
 
 FROM registry.fedoraproject.org/fedora-minimal:35 AS build
+ARG GO_VERSION=go1.17.3
+ENV GOPATH="/go"
+ENV PATH="$GOPATH/bin:$PATH"
 USER root
 WORKDIR /work
 
-# Speed up build by leveraging docker layer caching
-COPY go.mod go.sum vendor/ ./
 RUN mkdir -p bin
+RUN mkdir -p /go
 
 RUN microdnf install -y udica golang make libsemanage-devel
 
-ADD . /work
+# NOTE(jaosorior): This allows us to use a specific golang version in CentOS as
+# opposed to the older one that comes with the distro.
+RUN go install golang.org/dl/${GO_VERSION}@latest
+RUN ${GO_VERSION} download
 
-RUN make
+COPY . /work
+
+RUN GO=${GO_VERSION} make
 
 FROM registry.fedoraproject.org/fedora-minimal:35
 
