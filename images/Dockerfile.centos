@@ -13,21 +13,28 @@
 # limitations under the License.
 
 FROM registry.centos.org/centos:8 AS build
+ARG GO_VERSION=go1.17.3
+ENV GOPATH="/go"
+ENV PATH="$GOPATH/bin:$PATH"
 USER root
 WORKDIR /work
 
-# Speed up build by leveraging docker layer caching
-COPY go.mod go.sum vendor/ ./
 RUN mkdir -p bin
+RUN mkdir -p /go
 
 RUN dnf install -y --disableplugin=subscription-manager \
     --enablerepo=powertools \
     udica \
     golang make libsemanage-devel
 
-ADD . /work
+# NOTE(jaosorior): This allows us to use a specific golang version in CentOS as
+# opposed to the older one that comes with the distro.
+RUN go install golang.org/dl/${GO_VERSION}@latest
+RUN ${GO_VERSION} download
 
-RUN make
+COPY . /work
+
+RUN GO=${GO_VERSION} make
 
 FROM registry.centos.org/centos:8
 # TODO(jaosorior): Switch to UBI once we use static linking
