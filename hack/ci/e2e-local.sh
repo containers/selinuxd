@@ -22,7 +22,7 @@ make fedora-image
 # Ensure image.tar isn't there
 rm -f image.tar
 
-podman save -o image.tar quay.io/jaosorior/selinuxd-fedora:latest
+podman save -o image.tar quay.io/security-profiles-operator/selinuxd-fedora:latest
 
 RUN=./hack/ci/run.sh
 

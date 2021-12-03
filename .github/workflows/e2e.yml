@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: make ${{ matrix.base }}-image
-      - run: podman save --format=docker-archive -o image.tar quay.io/jaosorior/selinuxd-${{ matrix.base }}:latest
+      - run: podman save --format=docker-archive -o image.tar quay.io/security-profiles-operator/selinuxd-${{ matrix.base }}:latest
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.base }}-image-tar
@@ -28,7 +28,7 @@ jobs:
         base: ["fedora", "centos"]
     env:
       RUN: ./hack/ci/run.sh
-      IMG: quay.io/jaosorior/selinuxd-${{ matrix.base }}:latest
+      IMG: quay.io/security-profiles-operator/selinuxd-${{ matrix.base }}:latest
       CONTAINER_NAME: selinuxd
       TEST_OS: ${{ matrix.base }}
     steps:
@@ -87,7 +87,7 @@ jobs:
         base: ["fedora", "centos"]
     env:
       RUN: ./hack/ci/run.sh
-      IMG: quay.io/jaosorior/selinuxd-${{ matrix.base }}:latest
+      IMG: quay.io/security-profiles-operator/selinuxd-${{ matrix.base }}:latest
       CONTAINER_NAME: selinuxd
       TEST_OS: ${{ matrix.base }}
     steps:

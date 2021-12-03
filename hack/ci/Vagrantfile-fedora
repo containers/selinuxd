@@ -20,7 +20,7 @@ Vagrant.configure("2") do |config|
   config.vm.provision "set-env", type: "shell", run: "once" do |sh|
     sh.inline = <<~SHELL
       set -euxo pipefail
-      echo "export IMG='quay.io/jaosorior/selinuxd-fedora:latest'" >> /etc/profile.d/selinuxd-env.sh
+      echo "export IMG='quay.io/security-profiles-operator/selinuxd-fedora:latest'" >> /etc/profile.d/selinuxd-env.sh
       echo "export OS='fedora'" >> /etc/profile.d/selinuxd-env.sh
       echo "export CONTAINER_NAME='selinuxd'" >> /etc/profile.d/selinuxd-env.sh
     SHELL

@@ -22,9 +22,9 @@ IMAGE_TAG=latest
 
 IMAGE_REF=$(IMAGE_NAME):$(IMAGE_TAG)
 
-IMAGE_REPO?=quay.io/jaosorior/$(IMAGE_REF)
-CENTOS_IMAGE_REPO?=quay.io/jaosorior/$(IMAGE_NAME)-centos:$(IMAGE_TAG)
-FEDORA_IMAGE_REPO?=quay.io/jaosorior/$(IMAGE_NAME)-fedora:$(IMAGE_TAG)
+IMAGE_REPO?=quay.io/security-profiles-operator/$(IMAGE_REF)
+CENTOS_IMAGE_REPO?=quay.io/security-profiles-operator/$(IMAGE_NAME)-centos:$(IMAGE_TAG)
+FEDORA_IMAGE_REPO?=quay.io/security-profiles-operator/$(IMAGE_NAME)-fedora:$(IMAGE_TAG)
 
 TEST_OS?=fedora
 
