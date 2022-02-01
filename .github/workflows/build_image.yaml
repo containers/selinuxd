@@ -17,8 +17,8 @@ jobs:
         dockerfiles: |
           ./images/Dockerfile.fedora
 
-  build-centos:
-    name: Build CentOS image
+  build-almalinux:
+    name: Build Alma Linux image
     runs-on: ubuntu-20.04
 
     steps:
@@ -27,7 +27,7 @@ jobs:
     - name: Buildah Action
       uses: redhat-actions/buildah-build@v2
       with:
-        image: selinuxd-centos
+        image: selinuxd-almalinux
         tags: latest ${{ github.sha }}
         dockerfiles: |
-          ./images/Dockerfile.centos
+          ./images/Dockerfile.almalinux

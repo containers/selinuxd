@@ -23,7 +23,7 @@ IMAGE_TAG=latest
 IMAGE_REF=$(IMAGE_NAME):$(IMAGE_TAG)
 
 IMAGE_REPO?=quay.io/security-profiles-operator/$(IMAGE_REF)
-CENTOS_IMAGE_REPO?=quay.io/security-profiles-operator/$(IMAGE_NAME)-centos:$(IMAGE_TAG)
+ALMA_IMAGE_REPO?=quay.io/security-profiles-operator/$(IMAGE_NAME)-almalinux:$(IMAGE_TAG)
 FEDORA_IMAGE_REPO?=quay.io/security-profiles-operator/$(IMAGE_NAME)-fedora:$(IMAGE_TAG)
 
 TEST_OS?=fedora
@@ -90,15 +90,15 @@ $(GOPATH)/bin/golangci-lint:
 	GOLANGCI_LINT_CACHE=/tmp/golangci-cache $(GOPATH)/bin/golangci-lint linters
 
 .PHONY: image
-image: default-image centos-image fedora-image
+image: default-image almalinux-image fedora-image
 
 .PHONY: default-image
 default-image:
-	$(CONTAINER_RUNTIME) build -f images/Dockerfile.centos -t $(IMAGE_REPO) .
+	$(CONTAINER_RUNTIME) build -f images/Dockerfile.almalinux -t $(IMAGE_REPO) .
 
-.PHONY: centos-image
-centos-image:
-	$(CONTAINER_RUNTIME) build -f images/Dockerfile.centos -t $(CENTOS_IMAGE_REPO) .
+.PHONY: almalinux-image
+almalinux-image:
+	$(CONTAINER_RUNTIME) build -f images/Dockerfile.almalinux -t $(ALMA_IMAGE_REPO) .
 
 .PHONY: fedora-image
 fedora-image:

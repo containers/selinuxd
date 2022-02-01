@@ -3,7 +3,7 @@
 
 # Vagrant box for testing
 Vagrant.configure("2") do |config|
-  config.vm.box = "centos/8"
+  config.vm.box = "almalinux/8"
   memory = 6144
   cpus = 4
 
@@ -20,8 +20,8 @@ Vagrant.configure("2") do |config|
   config.vm.provision "set-env", type: "shell", run: "once" do |sh|
     sh.inline = <<~SHELL
       set -euxo pipefail
-      echo "export IMG='quay.io/security-profiles-operator/selinuxd-centos:latest'" >> /etc/profile.d/selinuxd-env.sh
-      echo "export OS='centos'" >> /etc/profile.d/selinuxd-env.sh
+      echo "export IMG='quay.io/security-profiles-operator/selinuxd-alma:latest'" >> /etc/profile.d/selinuxd-env.sh
+      echo "export OS='alma'" >> /etc/profile.d/selinuxd-env.sh
       echo "export CONTAINER_NAME='selinuxd'" >> /etc/profile.d/selinuxd-env.sh
     SHELL
   end

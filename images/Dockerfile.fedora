@@ -24,7 +24,7 @@ RUN mkdir -p /go
 
 RUN microdnf install -y udica golang make libsemanage-devel
 
-# NOTE(jaosorior): This allows us to use a specific golang version in CentOS as
+# NOTE(jaosorior): This allows us to use a specific golang version in Fedora as
 # opposed to the older one that comes with the distro.
 RUN go install golang.org/dl/${GO_VERSION}@latest
 RUN ${GO_VERSION} download

@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        base: ["fedora", "centos"]
+        base: ["fedora", "almalinux"]
     steps:
       - uses: actions/checkout@v2
       - run: make ${{ matrix.base }}-image
@@ -25,7 +25,7 @@ jobs:
     timeout-minutes: 80
     strategy:
       matrix:
-        base: ["fedora", "centos"]
+        base: ["fedora", "almalinux"]
     env:
       RUN: ./hack/ci/run.sh
       IMG: quay.io/security-profiles-operator/selinuxd-${{ matrix.base }}:latest
@@ -84,7 +84,7 @@ jobs:
     timeout-minutes: 80
     strategy:
       matrix:
-        base: ["fedora", "centos"]
+        base: ["fedora", "almalinux"]
     env:
       RUN: ./hack/ci/run.sh
       IMG: quay.io/security-profiles-operator/selinuxd-${{ matrix.base }}:latest
