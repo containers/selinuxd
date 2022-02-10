@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM registry.centos.org/centos:8 AS build
+FROM docker.io/almalinux:8 AS build
 ARG GO_VERSION=go1.17.3
 ENV GOPATH="/go"
 ENV PATH="$GOPATH/bin:$PATH"
@@ -22,7 +22,7 @@ WORKDIR /work
 RUN mkdir -p bin
 RUN mkdir -p /go
 
-RUN dnf install -y --disableplugin=subscription-manager \
+RUN dnf install -y \
     --enablerepo=powertools \
     udica \
     golang make libsemanage-devel
@@ -36,7 +36,7 @@ COPY . /work
 
 RUN GO=${GO_VERSION} make
 
-FROM registry.centos.org/centos:8
+FROM docker.io/almalinux:8
 # TODO(jaosorior): Switch to UBI once we use static linking
 #FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
@@ -47,7 +47,7 @@ LABEL name="selinuxd" \
       description="selinuxd is a daemon that listens for files in /etc/selinux.d/ and installs the relevant policies."
 
 # TODO(jaosorior): Remove once we use static linking
-RUN dnf install -y --disableplugin=subscription-manager \
+RUN dnf install -y \
     --enablerepo=powertools \
     policycoreutils
 
