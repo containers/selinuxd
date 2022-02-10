@@ -7,9 +7,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        centos: ["8"]
+        almalinux: ["8"]
     container:
-      image: centos:${{ matrix.centos }}
+      image: almalinux:${{ matrix.almalinux }}
     steps:
       - uses: actions/checkout@v2
       - name: install packages
