@@ -110,7 +110,7 @@ push:
 
 image.tar:
 	$(MAKE) $(TEST_OS)-image && \
-	$(CONTAINER_RUNTIME) save -o image.tar $(FEDORA_IMAGE_REPO); \
+	$(CONTAINER_RUNTIME) save -o image.tar quay.io/security-profiles-operator/$(IMAGE_NAME)-$(TEST_OS):$(IMAGE_TAG); \
 
 .PHONY: vagrant-up
 vagrant-up: image.tar ## Boot the vagrant based test VM
