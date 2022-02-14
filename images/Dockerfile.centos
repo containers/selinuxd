@@ -53,11 +53,6 @@ RUN dnf install -y \
 
 RUN mkdir -p /usr/share/selinuxd/templates
 COPY --from=build /usr/share/udica/templates/* /usr/share/selinuxd/templates/
-
-# For backwards compatibility with older SPO, we can remove later
-RUN mkdir -p /usr/share/udica/
-RUN ln -s /usr/share/selinuxd/templates /usr/share/udica/templates
-
 COPY --from=build /work/bin/selinuxdctl /usr/bin/
 
 ENTRYPOINT ["/usr/bin/selinuxdctl"]
