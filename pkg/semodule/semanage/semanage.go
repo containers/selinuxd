@@ -1,3 +1,6 @@
+//go:build semanage
+// +build semanage
+
 package semanage
 
 /*
@@ -13,49 +16,14 @@ void wrap_set_cb(semanage_handle_t *handle, void *arg);
 import "C"
 import (
 	"bytes"
-	"errors"
-	"fmt"
+	"github.com/containers/selinuxd/pkg/semodule/interface"
 	"sync"
 	"unsafe"
 
 	"github.com/go-logr/logr"
-
-	"github.com/containers/selinuxd/pkg/semodule"
 )
 
 var globLogger logr.Logger
-
-// errors
-var (
-	// ErrHandleCreate is an error when getting a handle to semanage
-	ErrHandleCreate = errors.New("could not create handle")
-	// ErrSELinuxDBConnect is an error to connect to the SELinux database
-	ErrSELinuxDBConnect = errors.New("could not connect to the SELinux DB")
-	// ErrNilHandle would happen if you initialized the Handler without
-	// the using the `NewSemanageHandler` function or without initializing
-	// the underlying semanage handler
-	ErrNilHandle = errors.New("nil semanage handle")
-	// ErrList is an error listing the SELinux modules
-	ErrList = errors.New("cannot list")
-	// ErrCannotRemoveModule is an error removing a SELinux module
-	ErrCannotRemoveModule = errors.New("cannot remove module")
-	// ErrCannotInstallModule is an error installing a SELinux module
-	ErrCannotInstallModule = errors.New("cannot install module")
-	// ErrCommit is an error when commiting the changes to the SELinux policy
-	ErrCommit = errors.New("cannot commit changes to policy")
-)
-
-func NewErrCannotRemoveModule(mName string) error {
-	return fmt.Errorf("%w: %s", ErrCannotRemoveModule, mName)
-}
-
-func NewErrCannotInstallModule(mName string) error {
-	return fmt.Errorf("%w: %s", ErrCannotInstallModule, mName)
-}
-
-func NewErrCommit(origErrVal int, msg string) error {
-	return fmt.Errorf("%w - error code: %d. message: %s", ErrCommit, origErrVal, msg)
-}
 
 type globalErrorFlusher struct {
 	mu  sync.Mutex
@@ -101,18 +69,18 @@ type SeHandler struct {
 // `autoCommit` tells the handler to always issue a commit when
 // installing/removing policies. If this is set to `off` You would
 // need to commit explicitly.
-func NewSemanageHandler(autoCommit bool, logger logr.Logger) (semodule.Handler, error) {
+func NewSemanageHandler(autoCommit bool, logger logr.Logger) (seiface.Handler, error) {
 	globLogger = logger
 	handle := C.semanage_handle_create()
 	if handle == nil {
-		return nil, ErrHandleCreate
+		return nil, seiface.ErrHandleCreate
 	}
 
 	C.wrap_set_cb(handle, nil)
 
 	rv := C.semanage_connect(handle)
 	if rv < 0 {
-		return nil, ErrSELinuxDBConnect
+		return nil, seiface.ErrSELinuxDBConnect
 	}
 
 	return &SeHandler{
@@ -147,7 +115,7 @@ func (sm *SeHandler) List() ([]string, error) {
 	var cNmod C.int
 
 	if sm.handle == nil {
-		return nil, ErrNilHandle
+		return nil, seiface.ErrNilHandle
 	}
 
 	// NOTE(jaosorior): I actually don't understand the warning
@@ -155,7 +123,7 @@ func (sm *SeHandler) List() ([]string, error) {
 	// nolint:gocritic
 	rv := C.semanage_module_list(sm.handle, &modInfoList, &cNmod)
 	if rv < 0 {
-		return nil, ErrList
+		return nil, seiface.ErrList
 	}
 	defer C.free(unsafe.Pointer(modInfoList))
 
@@ -175,7 +143,7 @@ func (sm *SeHandler) List() ([]string, error) {
 
 func (sm *SeHandler) Remove(moduleName string) error {
 	if sm.handle == nil {
-		return ErrNilHandle
+		return seiface.ErrNilHandle
 	}
 
 	cModName := C.CString(moduleName)
@@ -183,7 +151,7 @@ func (sm *SeHandler) Remove(moduleName string) error {
 
 	rv := C.semanage_module_remove(sm.handle, cModName)
 	if rv < 0 {
-		return NewErrCannotRemoveModule(moduleName)
+		return seiface.NewErrCannotRemoveModule(moduleName)
 	}
 
 	if sm.autoCommit {
@@ -194,7 +162,7 @@ func (sm *SeHandler) Remove(moduleName string) error {
 
 func (sm *SeHandler) Install(moduleFile string) error {
 	if sm.handle == nil {
-		return ErrNilHandle
+		return seiface.ErrNilHandle
 	}
 
 	cModFile := C.CString(moduleFile)
@@ -202,7 +170,7 @@ func (sm *SeHandler) Install(moduleFile string) error {
 
 	rv := C.semanage_module_install_file(sm.handle, cModFile)
 	if rv < 0 {
-		return NewErrCannotInstallModule(moduleFile)
+		return seiface.NewErrCannotInstallModule(moduleFile)
 	}
 
 	if sm.autoCommit {
@@ -213,14 +181,14 @@ func (sm *SeHandler) Install(moduleFile string) error {
 
 func (sm *SeHandler) Commit() error {
 	if sm.handle == nil {
-		return ErrNilHandle
+		return seiface.ErrNilHandle
 	}
 
 	rv := C.semanage_commit(sm.handle)
 	// This ensures that we always flush after commit
 	msg := errflush.flush()
 	if rv < 0 {
-		return NewErrCommit(int(rv), msg)
+		return seiface.NewErrCommit(int(rv), msg)
 	}
 
 	return nil

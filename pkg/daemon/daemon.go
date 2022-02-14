@@ -8,7 +8,7 @@ import (
 	"github.com/go-logr/logr"
 
 	"github.com/containers/selinuxd/pkg/datastore"
-	"github.com/containers/selinuxd/pkg/semodule"
+	seiface "github.com/containers/selinuxd/pkg/semodule/interface"
 )
 
 type SelinuxdOptions struct {
@@ -22,7 +22,7 @@ type SelinuxdOptions struct {
 // * `sh`: is the SELinux module handler interface.
 // * `ds`: is the DataStore interface.
 // * `l`: is a logger interface.
-func Daemon(opts *SelinuxdOptions, mPath string, sh semodule.Handler, ds datastore.DataStore, done chan bool,
+func Daemon(opts *SelinuxdOptions, mPath string, sh seiface.Handler, ds datastore.DataStore, done chan bool,
 	l logr.Logger) {
 	policyops := make(chan PolicyAction)
 	readychan := make(chan bool)
@@ -118,7 +118,7 @@ func watchFiles(watcher *fsnotify.Watcher, policyops chan PolicyAction, logger l
 
 // InstallPolicies installs the policies found in the `modulePath` directory
 // nolint: lll
-func InstallPolicies(modulePath string, sh semodule.Handler, ds datastore.DataStore, policyops chan PolicyAction, logger logr.Logger) {
+func InstallPolicies(modulePath string, sh seiface.Handler, ds datastore.DataStore, policyops chan PolicyAction, logger logr.Logger) {
 	ilog := logger.WithName("policy-installer")
 	for action := range policyops {
 		if actionOut, err := action.do(modulePath, sh, ds); err != nil {

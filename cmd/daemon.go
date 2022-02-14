@@ -25,7 +25,7 @@ import (
 
 	"github.com/containers/selinuxd/pkg/daemon"
 	"github.com/containers/selinuxd/pkg/datastore"
-	"github.com/containers/selinuxd/pkg/semodule/semanage"
+	"github.com/containers/selinuxd/pkg/semodule"
 )
 
 // daemonCmd represents the daemon command
@@ -104,9 +104,9 @@ func daemonCmdFunc(rootCmd *cobra.Command, _ []string) {
 	done := make(chan bool)
 	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
 
-	sh, err := semanage.NewSemanageHandler(true, logger)
+	sh, err := semodule.NewSemoduleHandler(true, logger)
 	if err != nil {
-		logger.Error(err, "Creating semanage handler")
+		logger.Error(err, "Creating semodule handler")
 	}
 	defer sh.Close()
 

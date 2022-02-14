@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/containers/selinuxd/pkg/semodule"
+	seiface "github.com/containers/selinuxd/pkg/semodule/interface"
 	"github.com/containers/selinuxd/pkg/utils"
 )
 
@@ -14,7 +14,7 @@ type SEModuleTestHandler struct {
 }
 
 // Ensure that the test handler implements the Handler interface
-var _ semodule.Handler = &SEModuleTestHandler{}
+var _ seiface.Handler = &SEModuleTestHandler{}
 
 func NewSEModuleTestHandler() *SEModuleTestHandler {
 	return &SEModuleTestHandler{}

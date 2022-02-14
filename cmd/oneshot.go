@@ -26,7 +26,7 @@ import (
 	"github.com/containers/selinuxd/pkg/daemon"
 	"github.com/containers/selinuxd/pkg/datastore"
 	"github.com/containers/selinuxd/pkg/semodule"
-	"github.com/containers/selinuxd/pkg/semodule/semanage"
+	seiface "github.com/containers/selinuxd/pkg/semodule/interface"
 )
 
 // oneshotCmd represents the oneshot command
@@ -59,7 +59,7 @@ func parseOneShotFlags(rootCmd *cobra.Command) (*daemon.SelinuxdOptions, error) 
 	return &config, nil
 }
 
-func tryInstallAllPolicies(sh semodule.Handler, ds datastore.DataStore, logger logr.Logger) {
+func tryInstallAllPolicies(sh seiface.Handler, ds datastore.DataStore, logger logr.Logger) {
 	policyops := make(chan daemon.PolicyAction)
 
 	go func() {
@@ -85,9 +85,9 @@ func oneshotCmdFunc(rootCmd *cobra.Command, _ []string) {
 		syscall.Exit(1)
 	}
 
-	sh, err := semanage.NewSemanageHandler(false, logger)
+	sh, err := semodule.NewSemoduleHandler(false, logger)
 	if err != nil {
-		logger.Error(err, "Creating semanage handler")
+		logger.Error(err, "Creating semodule handler")
 	}
 	defer sh.Close()
 

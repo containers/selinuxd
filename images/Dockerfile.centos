@@ -34,7 +34,7 @@ RUN ${GO_VERSION} download
 
 COPY . /work
 
-RUN GO=${GO_VERSION} make
+RUN GO=${GO_VERSION} SEMODULE_BACKEND=policycoreutils make
 
 FROM docker.io/almalinux:8
 # TODO(jaosorior): Switch to UBI once we use static linking
