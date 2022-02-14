@@ -22,7 +22,7 @@ WORKDIR /work
 RUN mkdir -p bin
 RUN mkdir -p /go
 
-RUN microdnf install -y udica golang make libsemanage-devel
+RUN microdnf install -y golang make libsemanage-devel container-selinux
 
 # NOTE(jaosorior): This allows us to use a specific golang version in CentOS as
 # opposed to the older one that comes with the distro.
