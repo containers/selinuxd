@@ -19,10 +19,6 @@ source /etc/profile.d/selinuxd-env.sh
 
 mkdir -p /etc/selinux.d
 
-sed -e '/RefuseManualStop/ s/^#*/#/' -i /usr/lib/systemd/system/auditd.service
-systemctl daemon-reload
-systemctl stop auditd
-
 # Initialize base policies
 podman run \
     --name policy-copy \
