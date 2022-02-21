@@ -35,6 +35,7 @@ Vagrant.configure("2") do |config|
         golang \
         podman \
         container-selinux \
+        oci-seccomp-bpf-hook \
         udica
     SHELL
   end
