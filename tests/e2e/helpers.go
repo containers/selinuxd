@@ -22,9 +22,9 @@ var (
 
 const (
 	// timeout for selinuxd to report it's ready
-	selinuxdReadyTimeout float64 = 240
+	selinuxdReadyTimeout float64 = 320
 	// default time to wait for selinuxd do an operation
-	selinuxdTimeout = 5 * time.Minute
+	selinuxdTimeout = 10 * time.Minute
 	// default interval between operations
 	defaultInterval = 2 * time.Second
 	selinuxdDir     = "/etc/selinux.d"
