@@ -28,6 +28,14 @@ FEDORA_IMAGE_REPO?=quay.io/security-profiles-operator/$(IMAGE_NAME)-fedora:$(IMA
 
 TEST_OS?=fedora
 
+SEMODULE_BACKEND?=policycoreutils
+ifeq ($(SEMODULE_BACKEND), semanage)
+	BUILDTAGS:=semanage
+endif
+ifeq ($(SEMODULE_BACKEND), policycoreutils)
+	BUILDTAGS:=policycoreutils
+endif
+
 # Targets
 
 .PHONY: all
@@ -37,15 +45,15 @@ all: build
 build: $(BIN)
 
 $(BIN): $(BINDIR) $(SRC) pkg/semodule/semanage/callbacks.c
-	$(GO) build -o $(BIN) .
+	$(GO) build -tags '$(BUILDTAGS)' -o $(BIN) .
 
 .PHONY: test
 test:
-	$(GO) test -race github.com/containers/selinuxd/pkg/...
+	$(GO) test -tags '$(BUILDTAGS)' -race github.com/containers/selinuxd/pkg/...
 
 .PHONY: e2e
 e2e:
-	$(GO) test ./tests/e2e -timeout 40m -v --ginkgo.v
+	$(GO) test -tags '$(BUILDTAGS)' ./tests/e2e -timeout 40m -v --ginkgo.v
 
 
 .PHONY: run

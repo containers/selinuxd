@@ -6,13 +6,13 @@ import (
 	"fmt"
 
 	"github.com/containers/selinuxd/pkg/datastore"
-	"github.com/containers/selinuxd/pkg/semodule"
+	seiface "github.com/containers/selinuxd/pkg/semodule/interface"
 	"github.com/containers/selinuxd/pkg/utils"
 )
 
 type PolicyAction interface {
 	String() string
-	do(modulePath string, sh semodule.Handler, ds datastore.DataStore) (string, error)
+	do(modulePath string, sh seiface.Handler, ds datastore.DataStore) (string, error)
 }
 
 // Defines an action to be taken on a policy file on the specified path
@@ -29,7 +29,7 @@ func (pi *policyInstall) String() string {
 	return "install - " + pi.path
 }
 
-func (pi *policyInstall) do(modulePath string, sh semodule.Handler, ds datastore.DataStore) (string, error) {
+func (pi *policyInstall) do(modulePath string, sh seiface.Handler, ds datastore.DataStore) (string, error) {
 	policyName, err := utils.PolicyNameFromPath(pi.path)
 	if err != nil {
 		return "", fmt.Errorf("installing policy: %w", err)
@@ -88,7 +88,7 @@ func (pi *policyRemove) String() string {
 	return "remove - " + pi.path
 }
 
-func (pi *policyRemove) do(modulePath string, sh semodule.Handler, ds datastore.DataStore) (string, error) {
+func (pi *policyRemove) do(modulePath string, sh seiface.Handler, ds datastore.DataStore) (string, error) {
 	var policyArg string
 	policyArg, err := utils.PolicyNameFromPath(pi.path)
 	if err != nil {
@@ -112,7 +112,7 @@ func (pi *policyRemove) do(modulePath string, sh semodule.Handler, ds datastore.
 	return "", nil
 }
 
-func (pi *policyRemove) moduleInstalled(sh semodule.Handler, policy string) bool {
+func (pi *policyRemove) moduleInstalled(sh seiface.Handler, policy string) bool {
 	currentModules, err := sh.List()
 	if err != nil {
 		return false
