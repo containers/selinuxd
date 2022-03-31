@@ -9,7 +9,7 @@ import (
 	"time"
 
 	//nolint:golint,stylecheck
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 
 	//nolint:golint,stylecheck
 	. "github.com/onsi/gomega"
