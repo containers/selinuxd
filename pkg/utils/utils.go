@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	ErrInvalidPath = errors.New("invalid path")
-	ErrNoExtension = errors.New("file without extension")
+	ErrInvalidPath      = errors.New("invalid path")
+	ErrInvalidExtension = errors.New("file with invalid extension, valid extensions: .cil .pp")
 )
 
 func NewErrInvalidPath(path string) error {
@@ -24,8 +24,10 @@ func GetFileWithoutExtension(filename string) string {
 }
 
 func PolicyNameFromPath(path string) (string, error) {
-	if filepath.Ext(path) == "" {
-		return "", fmt.Errorf("ignoring: %w", ErrNoExtension)
+	switch filepath.Ext(path) {
+	case ".cil", ".pp":
+	default:
+		return "", fmt.Errorf("ignoring: %w", ErrInvalidExtension)
 	}
 	baseFile := filepath.Base(path)
 	policy := GetFileWithoutExtension(baseFile)
