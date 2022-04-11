@@ -3,7 +3,7 @@ module github.com/containers/selinuxd
 go 1.15
 
 require (
-	github.com/cenkalti/backoff/v4 v4.1.2
+	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/go-logr/logr v1.2.3
 	github.com/go-logr/zapr v1.2.3
