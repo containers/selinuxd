@@ -26,6 +26,7 @@ import (
 	"github.com/containers/selinuxd/pkg/daemon"
 	"github.com/containers/selinuxd/pkg/datastore"
 	"github.com/containers/selinuxd/pkg/semodule"
+	"github.com/containers/selinuxd/pkg/version"
 )
 
 // daemonCmd represents the daemon command
@@ -99,6 +100,8 @@ func daemonCmdFunc(rootCmd *cobra.Command, _ []string) {
 		logger.Error(err, "Parsing flags")
 		syscall.Exit(1)
 	}
+
+	version.PrintInfoPermissive(logger)
 
 	exitSignal := make(chan os.Signal, 1)
 	done := make(chan bool)

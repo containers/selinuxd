@@ -1,3 +1,4 @@
+PROJECT=selinuxd
 BIN=$(BINDIR)/selinuxdctl
 BINDIR=bin
 POLICYDIR=/etc/selinux.d
@@ -5,6 +6,8 @@ POLICYDIR=/etc/selinux.d
 SRC=$(shell find . -name "*.go")
 
 GO?=go
+
+GO_PROJECT := github.com/containers/$(PROJECT)
 
 # External Helper variables
 
@@ -17,7 +20,7 @@ GOLANGCI_LINT_URL=https://github.com/golangci/golangci-lint/releases/download/v$
 
 CONTAINER_RUNTIME?=podman
 
-IMAGE_NAME=selinuxd
+IMAGE_NAME=$(PROJECT)
 IMAGE_TAG=latest
 
 IMAGE_REF=$(IMAGE_NAME):$(IMAGE_TAG)
@@ -27,6 +30,14 @@ CENTOS_IMAGE_REPO?=quay.io/security-profiles-operator/$(IMAGE_NAME)-centos:$(IMA
 FEDORA_IMAGE_REPO?=quay.io/security-profiles-operator/$(IMAGE_NAME)-fedora:$(IMAGE_TAG)
 
 TEST_OS?=fedora
+
+DATE_FMT = +'%Y-%m-%dT%H:%M:%SZ'
+BUILD_DATE ?= $(shell date -u "$(DATE_FMT)")
+VERSION := $(shell cat VERSION)
+
+LDVARS := \
+	-X $(GO_PROJECT)/pkg/version.buildDate=$(BUILD_DATE) \
+	-X $(GO_PROJECT)/pkg/version.version=$(VERSION)
 
 SEMODULE_BACKEND?=policycoreutils
 ifeq ($(SEMODULE_BACKEND), semanage)
@@ -45,11 +56,11 @@ all: build
 build: $(BIN)
 
 $(BIN): $(BINDIR) $(SRC) pkg/semodule/semanage/callbacks.c
-	$(GO) build -tags '$(BUILDTAGS)' -o $(BIN) .
+	$(GO) build -ldflags "$(LDVARS)" -tags '$(BUILDTAGS)' -o $(BIN) .
 
 .PHONY: test
 test:
-	$(GO) test -tags '$(BUILDTAGS)' -race github.com/containers/selinuxd/pkg/...
+	$(GO) test -tags '$(BUILDTAGS)' -race $(GO_PROJECT)/pkg/...
 
 .PHONY: e2e
 e2e:
