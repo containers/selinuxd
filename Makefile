@@ -108,8 +108,18 @@ $(GOPATH)/bin/golangci-lint:
 	GOLANGCI_LINT_CACHE=/tmp/golangci-cache $(GOPATH)/bin/golangci-lint version
 	GOLANGCI_LINT_CACHE=/tmp/golangci-cache $(GOPATH)/bin/golangci-lint linters
 
+.PHONY: set-release-tag
+set-release-tag:
+	$(eval IMAGE_TAG = $(VERSION))
+
 .PHONY: image
 image: default-image centos-image fedora-image
+
+.PHONY: release-image
+release-image: set-release-tag default-image centos-image fedora-image push push-fedora
+	# This will ensure that we also push to the latest tag
+	$(eval IMAGE_TAG = latest)
+	$(MAKE) push
 
 .PHONY: default-image
 default-image:
@@ -124,8 +134,12 @@ fedora-image:
 	$(CONTAINER_RUNTIME) build -f images/Dockerfile.fedora -t $(FEDORA_IMAGE_REPO) .
 
 .PHONY: push
-push:
+push: default-image
 	$(CONTAINER_RUNTIME) push $(IMAGE_REPO)
+
+.PHONY: push-fedora
+push-fedora: fedora-image
+	$(CONTAINER_RUNTIME) push $(FEDORA_IMAGE_REPO)
 
 image.tar:
 	$(MAKE) $(TEST_OS)-image && \
@@ -137,3 +151,31 @@ vagrant-up: image.tar ## Boot the vagrant based test VM
 	# Retry in case provisioning failed because of some temporarily unavailable
 	# remote resource (like the VM image)
 	vagrant up || vagrant up || vagrant up
+
+.PHONY: check-release-version
+check-release-version:
+ifndef RELEASE_VERSION
+	$(error RELEASE_VERSION must be defined)
+endif
+
+.PHONY: commit-release-version
+commit-release-version: check-release-version
+	echo $(RELEASE_VERSION) > VERSION
+	git add VERSION
+	git commit -s -m "Release v$(RELEASE_VERSION)"
+	$(eval VERSION = $(RELEASE_VERSION))
+
+.PHONY: next-version
+next-version:
+	@grep '^[0-9]\+.[0-9]\+.[0-9]\+$$' VERSION
+	sed -i "s/\([0-9]\+\.[0-9]\+\.[0-9]\+\)/\1.99/" VERSION
+	git add VERSION
+	git commit -s -m "Prepare VERSION for the next release"
+
+.PHONY: tag-release
+tag-release:
+	git tag "v$(VERSION)"
+	git push origin "v$(VERSION)"
+
+.PHONY: release
+release: commit-release-version tag-release release-image next-version
