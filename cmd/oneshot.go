@@ -27,6 +27,7 @@ import (
 	"github.com/containers/selinuxd/pkg/datastore"
 	"github.com/containers/selinuxd/pkg/semodule"
 	seiface "github.com/containers/selinuxd/pkg/semodule/interface"
+	"github.com/containers/selinuxd/pkg/version"
 )
 
 // oneshotCmd represents the oneshot command
@@ -78,6 +79,8 @@ func oneshotCmdFunc(rootCmd *cobra.Command, _ []string) {
 		fmt.Fprintf(os.Stderr, "%s", err)
 		syscall.Exit(1)
 	}
+
+	version.PrintInfoPermissive(logger)
 
 	opts, err := parseOneShotFlags(rootCmd)
 	if err != nil {
