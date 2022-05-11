@@ -9,13 +9,35 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Buildah Action
-      uses: redhat-actions/buildah-build@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+  
+    - name: Build and push
+      uses: docker/build-push-action@v3
       with:
-        image: selinuxd-fedora
-        tags: latest ${{ github.sha }}
-        dockerfiles: |
-          ./images/Dockerfile.fedora
+        push: false
+        load: true
+        tags: localbuild/selinuxd-fedora:latest
+        file: ./images/Dockerfile.fedora
+
+    - name: Scan image
+      id: scan
+      uses: anchore/scan-action@v3
+      with:
+        image: localbuild/selinuxd-fedora:latest
+        acs-report-enable: true
+
+    - name: upload Anchore scan SARIF report
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: ${{ steps.scan.outputs.sarif }}
+      # This should run even if we fail the container scan
+      if: always()
+      
+    - name: Inspect action SARIF report
+      run: cat ${{ steps.scan.outputs.sarif }}
+      # This should run even if we fail the container scan
+      if: always()
 
   build-centos:
     name: Build CentOS image
@@ -24,10 +46,32 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Buildah Action
-      uses: redhat-actions/buildah-build@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+  
+    - name: Build and push
+      uses: docker/build-push-action@v3
       with:
-        image: selinuxd-centos
-        tags: latest ${{ github.sha }}
-        dockerfiles: |
-          ./images/Dockerfile.centos
+        push: false
+        load: true
+        tags: localbuild/selinuxd-centos:latest
+        file: ./images/Dockerfile.centos
+
+    - name: Scan image
+      id: scan
+      uses: anchore/scan-action@v3
+      with:
+        image: localbuild/selinuxd-centos:latest
+        acs-report-enable: true
+
+    - name: upload Anchore scan SARIF report
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: ${{ steps.scan.outputs.sarif }}
+      # This should run even if we fail the container scan
+      if: always()
+      
+    - name: Inspect action SARIF report
+      run: cat ${{ steps.scan.outputs.sarif }}
+      # This should run even if we fail the container scan
+      if: always()
