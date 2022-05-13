@@ -20,7 +20,7 @@ type SEModulePcuHandler struct {
 var _ seiface.Handler = &SEModulePcuHandler{}
 
 func runSemodule(opFlag string, policyArgs ...string) (string, error) {
-	fullArgs := []string{"-v", opFlag}
+	fullArgs := []string{opFlag}
 	fullArgs = append(fullArgs, policyArgs...)
 	cmd := exec.CommandContext(context.TODO(), "/usr/sbin/semodule", fullArgs...)
 	out, err := cmd.CombinedOutput()
@@ -38,11 +38,11 @@ func (smt *SEModulePcuHandler) SetAutoCommit(_ bool) {
 func (smt *SEModulePcuHandler) Install(modulePath string) error {
 	out, err := runSemodule("-X", "350", "-i", modulePath)
 	if err != nil {
-		smt.logger.Error(err, "Installing policy", "modulePath", modulePath)
+		smt.logger.Error(err, "Installing policy", "modulePath", modulePath, "output", out)
 		return seiface.NewErrCannotInstallModule(modulePath)
 	}
 
-	smt.logger.Info("Installing policy", "modulePath", modulePath, "out", out)
+	smt.logger.Info("Installing policy", "modulePath", modulePath, "output", out)
 	return nil
 }
 
@@ -65,11 +65,11 @@ func (smt *SEModulePcuHandler) List() ([]string, error) {
 func (smt *SEModulePcuHandler) Remove(modToRemove string) error {
 	out, err := runSemodule("-X", "350", "-r", modToRemove)
 	if err != nil {
-		smt.logger.Error(err, "Removing a policy", "modToRemove", modToRemove)
+		smt.logger.Error(err, "Removing a policy", "modToRemove", modToRemove, "output", out)
 		return seiface.NewErrCannotRemoveModule(modToRemove)
 	}
 
-	smt.logger.Info("Removing a policy", "out", out)
+	smt.logger.Info("Removing a policy", "output", out)
 	return nil
 }
 
