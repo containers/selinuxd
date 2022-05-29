@@ -26,8 +26,6 @@ github.com/hashicorp/hcl/json/scanner
 github.com/hashicorp/hcl/json/token
 # github.com/inconshreveable/mousetrap v1.0.0
 github.com/inconshreveable/mousetrap
-# github.com/kr/text v0.2.0
-## explicit
 # github.com/magiconair/properties v1.8.6
 github.com/magiconair/properties
 # github.com/mattn/go-runewidth v0.0.9
@@ -35,7 +33,7 @@ github.com/mattn/go-runewidth
 # github.com/mitchellh/go-homedir v1.1.0
 ## explicit
 github.com/mitchellh/go-homedir
-# github.com/mitchellh/mapstructure v1.4.3
+# github.com/mitchellh/mapstructure v1.5.0
 github.com/mitchellh/mapstructure
 # github.com/olekukonko/tablewriter v0.0.5
 ## explicit
@@ -64,9 +62,9 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# github.com/pelletier/go-toml v1.9.4
+# github.com/pelletier/go-toml v1.9.5
 github.com/pelletier/go-toml
-# github.com/pelletier/go-toml/v2 v2.0.0-beta.8
+# github.com/pelletier/go-toml/v2 v2.0.1
 github.com/pelletier/go-toml/v2
 github.com/pelletier/go-toml/v2/internal/ast
 github.com/pelletier/go-toml/v2/internal/danger
@@ -74,7 +72,7 @@ github.com/pelletier/go-toml/v2/internal/tracker
 # github.com/spf13/afero v1.8.2
 github.com/spf13/afero
 github.com/spf13/afero/mem
-# github.com/spf13/cast v1.4.1
+# github.com/spf13/cast v1.5.0
 github.com/spf13/cast
 # github.com/spf13/cobra v1.4.0
 ## explicit
@@ -83,7 +81,7 @@ github.com/spf13/cobra
 github.com/spf13/jwalterweatherman
 # github.com/spf13/pflag v1.0.5
 github.com/spf13/pflag
-# github.com/spf13/viper v1.11.0
+# github.com/spf13/viper v1.12.0
 ## explicit
 github.com/spf13/viper
 github.com/spf13/viper/internal/encoding
@@ -94,7 +92,7 @@ github.com/spf13/viper/internal/encoding/javaproperties
 github.com/spf13/viper/internal/encoding/json
 github.com/spf13/viper/internal/encoding/toml
 github.com/spf13/viper/internal/encoding/yaml
-# github.com/subosito/gotenv v1.2.0
+# github.com/subosito/gotenv v1.3.0
 github.com/subosito/gotenv
 # go.etcd.io/bbolt v1.3.6
 ## explicit
@@ -113,11 +111,11 @@ go.uber.org/zap/internal/bufferpool
 go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
 go.uber.org/zap/zapcore
-# golang.org/x/net v0.0.0-20220412020605-290c469a71a5
+# golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/html/charset
-# golang.org/x/sys v0.0.0-20220412211240-33da011f77ad
+# golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 # golang.org/x/text v0.3.7
@@ -145,5 +143,5 @@ golang.org/x/text/unicode/norm
 gopkg.in/ini.v1
 # gopkg.in/yaml.v2 v2.4.0
 gopkg.in/yaml.v2
-# gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+# gopkg.in/yaml.v3 v3.0.0
 gopkg.in/yaml.v3
