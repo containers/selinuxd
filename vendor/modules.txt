@@ -10,6 +10,12 @@ github.com/go-logr/logr
 # github.com/go-logr/zapr v1.2.3
 ## explicit
 github.com/go-logr/zapr
+# github.com/google/go-cmp v0.5.8
+github.com/google/go-cmp/cmp
+github.com/google/go-cmp/cmp/internal/diff
+github.com/google/go-cmp/cmp/internal/flags
+github.com/google/go-cmp/cmp/internal/function
+github.com/google/go-cmp/cmp/internal/value
 # github.com/gorilla/mux v1.8.0
 ## explicit
 github.com/gorilla/mux
@@ -50,7 +56,7 @@ github.com/onsi/ginkgo/v2/internal/parallel_support
 github.com/onsi/ginkgo/v2/internal/testingtproxy
 github.com/onsi/ginkgo/v2/reporters
 github.com/onsi/ginkgo/v2/types
-# github.com/onsi/gomega v1.19.0
+# github.com/onsi/gomega v1.20.0
 ## explicit
 github.com/onsi/gomega
 github.com/onsi/gomega/format
