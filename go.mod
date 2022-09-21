@@ -1,6 +1,6 @@
 module github.com/containers/selinuxd
 
-go 1.15
+go 1.18
 
 require (
 	github.com/cenkalti/backoff/v4 v4.1.3
