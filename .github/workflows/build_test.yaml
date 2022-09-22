@@ -11,7 +11,7 @@ jobs:
     container:
       image: almalinux:${{ matrix.almalinux }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: install packages
         run: yum -y --enablerepo=powertools install golang make libsemanage-devel
       - name: build selinuxd
