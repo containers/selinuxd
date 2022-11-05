@@ -19,9 +19,7 @@ func newBboltDS(path string) (DataStore, error) {
 	// NOTE(jaosorior): We should use /tmp or /run as SELinux policies
 	// only persist in memory. We don't need to keep track of the policies
 	// in-between host reboots. This is only needed for daemon reboots.
-	// NOTE: We do intend to use an octal literal here... hence the nolint
-	// nolint:gocritic
-	db, err := bolt.Open(path, 0600, nil)
+	db, err := bolt.Open(path, 0o600, nil) //nolint
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create datastore: %w", err)
 	}
@@ -44,7 +42,11 @@ func (ds *bboltDataStore) Close() error {
 	if ds.db == nil {
 		return ErrDataStoreNotInitialized
 	}
-	return ds.db.Close()
+	err := ds.db.Close()
+	if err != nil {
+		return fmt.Errorf("couldn't close db: %w", err)
+	}
+	return nil
 }
 
 func (ds *bboltDataStore) GetReadOnly() ReadOnlyDataStore {
@@ -55,7 +57,7 @@ func (ds *bboltDataStore) Put(status PolicyStatus) error {
 	if ds.db == nil {
 		return ErrDataStoreNotInitialized
 	}
-	return ds.db.Update(func(tx *bolt.Tx) error {
+	err := ds.db.Update(func(tx *bolt.Tx) error {
 		root := tx.Bucket(ds.root)
 		if root == nil {
 			return ErrDataStoreNotInitialized
@@ -78,6 +80,10 @@ func (ds *bboltDataStore) Put(status PolicyStatus) error {
 		}
 		return nil
 	})
+	if err != nil {
+		return fmt.Errorf("couldn't put policy status: %w", err)
+	}
+	return nil
 }
 
 func (ds *bboltDataStore) Get(policy string) (PolicyStatus, error) {
@@ -118,6 +124,7 @@ func (ds *bboltDataStore) List() ([]string, error) {
 		if root == nil {
 			return ErrDataStoreNotInitialized
 		}
+		//nolint:wrapcheck // this is a closure
 		return root.ForEach(func(k, v []byte) error {
 			output = append(output, string(k))
 			return nil
@@ -130,11 +137,16 @@ func (ds *bboltDataStore) List() ([]string, error) {
 }
 
 func (ds *bboltDataStore) Remove(policy string) error {
-	return ds.db.Update(func(tx *bolt.Tx) error {
+	err := ds.db.Update(func(tx *bolt.Tx) error {
 		root := tx.Bucket(ds.root)
 		if root == nil {
 			return ErrDataStoreNotInitialized
 		}
+		//nolint:wrapcheck // this is a closure
 		return root.DeleteBucket([]byte(policy))
 	})
+	if err != nil {
+		return fmt.Errorf("couldn't remove policy from db: %w", err)
+	}
+	return nil
 }

@@ -1,14 +1,14 @@
 package daemon
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/fsnotify/fsnotify"
-	"github.com/go-logr/logr"
-
 	"github.com/containers/selinuxd/pkg/datastore"
 	seiface "github.com/containers/selinuxd/pkg/semodule/interface"
+	"github.com/fsnotify/fsnotify"
+	"github.com/go-logr/logr"
 )
 
 type SelinuxdOptions struct {
@@ -23,7 +23,8 @@ type SelinuxdOptions struct {
 // * `ds`: is the DataStore interface.
 // * `l`: is a logger interface.
 func Daemon(opts *SelinuxdOptions, mPath string, sh seiface.Handler, ds datastore.DataStore, done chan bool,
-	l logr.Logger) {
+	l logr.Logger,
+) {
 	policyops := make(chan PolicyAction)
 	readychan := make(chan bool)
 
@@ -117,8 +118,7 @@ func watchFiles(watcher *fsnotify.Watcher, policyops chan PolicyAction, logger l
 }
 
 // InstallPolicies installs the policies found in the `modulePath` directory
-// nolint: lll
-func InstallPolicies(modulePath string, sh seiface.Handler, ds datastore.DataStore, policyops chan PolicyAction, logger logr.Logger) {
+func InstallPolicies(modulePath string, sh seiface.Handler, ds datastore.DataStore, policyops chan PolicyAction, logger logr.Logger) { //nolint:lll
 	ilog := logger.WithName("policy-installer")
 	for action := range policyops {
 		if actionOut, err := action.do(modulePath, sh, ds); err != nil {
@@ -135,12 +135,16 @@ func InstallPolicies(modulePath string, sh seiface.Handler, ds datastore.DataSto
 }
 
 func InstallPoliciesInDir(mpath string, policyops chan PolicyAction, watcher *fsnotify.Watcher) error {
-	return filepath.Walk(mpath, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(mpath, func(path string, info os.FileInfo, err error) error {
 		if info == nil {
 			return nil
 		}
 		if watcher != nil && info.IsDir() {
-			return watcher.Add(path)
+			err := watcher.Add(path)
+			if err != nil {
+				return fmt.Errorf("unable to watch directory %s: %w", path, err)
+			}
+			return nil
 		} else if info.IsDir() {
 			// ignore directories
 			return nil
@@ -149,4 +153,8 @@ func InstallPoliciesInDir(mpath string, policyops chan PolicyAction, watcher *fs
 		policyops <- newInstallAction(path)
 		return nil
 	})
+	if err != nil {
+		return fmt.Errorf("unable to walk module directory: %w", err)
+	}
+	return nil
 }

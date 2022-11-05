@@ -5,10 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/containers/selinuxd/pkg/datastore"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"github.com/containers/selinuxd/pkg/datastore"
 )
 
 var _ = Describe("E2e", func() {
@@ -86,7 +85,7 @@ var _ = Describe("E2e", func() {
 			)
 			BeforeEach(func() {
 				By("Creating subdir")
-				mkdirErr := os.Mkdir(subdirPath, 0700)
+				mkdirErr := os.Mkdir(subdirPath, 0o700)
 				Expect(mkdirErr).ToNot(HaveOccurred())
 				installPolicyFromReference("../data/testport.cil", policyPath)
 			})

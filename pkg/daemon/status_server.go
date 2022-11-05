@@ -8,16 +8,17 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"os"
-
-	"github.com/go-logr/logr"
-	"github.com/gorilla/mux"
+	"time"
 
 	"github.com/containers/selinuxd/pkg/datastore"
+	"github.com/go-logr/logr"
+	"github.com/gorilla/mux"
 )
 
 const (
 	DefaultUnixSockAddr = "/var/run/selinuxd.sock"
-	unixSockMode        = 0660
+	unixSockMode        = 0o660
+	readTimeout         = 5 * time.Second
 )
 
 type StatusServerConfig struct {
@@ -56,7 +57,8 @@ func (ss *statusServer) Serve(readychan <-chan bool) error {
 	ss.initializeRoutes(r)
 
 	server := &http.Server{
-		Handler: r,
+		Handler:     r,
+		ReadTimeout: readTimeout,
 	}
 
 	go ss.waitForReady(readychan)

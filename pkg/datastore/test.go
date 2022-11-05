@@ -25,11 +25,13 @@ func NewTestCountedDS(path string) (*TestCountedDS, error) {
 }
 
 func (tcds *TestCountedDS) Close() error {
+	//nolint:wrapcheck // let's not complicate the test code
 	return tcds.ds.Close()
 }
 
 func (tcds *TestCountedDS) Get(policy string) (PolicyStatus, error) {
 	atomic.AddInt32(&tcds.getCounter, 1)
+	//nolint:wrapcheck // let's not complicate the test code
 	return tcds.ds.Get(policy)
 }
 
@@ -38,11 +40,13 @@ func (tcds *TestCountedDS) GetCalls() int32 {
 }
 
 func (tcds *TestCountedDS) List() ([]string, error) {
+	//nolint:wrapcheck // let's not complicate the test code
 	return tcds.ds.List()
 }
 
 func (tcds *TestCountedDS) Put(status PolicyStatus) error {
 	atomic.AddInt32(&tcds.putCounter, 1)
+	//nolint:wrapcheck // let's not complicate the test code
 	return tcds.ds.Put(status)
 }
 
@@ -51,6 +55,7 @@ func (tcds *TestCountedDS) PutCalls() int32 {
 }
 
 func (tcds *TestCountedDS) Remove(policy string) error {
+	//nolint:wrapcheck // let's not complicate the test code
 	return tcds.ds.Remove(policy)
 }
 
