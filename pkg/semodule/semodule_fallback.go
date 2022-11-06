@@ -6,9 +6,8 @@ package semodule
 import (
 	"errors"
 
-	"github.com/go-logr/logr"
-
 	seiface "github.com/containers/selinuxd/pkg/semodule/interface"
+	"github.com/go-logr/logr"
 )
 
 // ErrNoSemodule is an error when no usable semodule back end is selected

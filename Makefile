@@ -11,7 +11,7 @@ GO_PROJECT := github.com/containers/$(PROJECT)
 
 # External Helper variables
 
-GOLANGCI_LINT_VERSION=1.33.0
+GOLANGCI_LINT_VERSION=1.50.1
 GOLANGCI_LINT_OS=linux
 ifeq ($(OS_NAME), Darwin)
     GOLANGCI_LINT_OS=darwin
