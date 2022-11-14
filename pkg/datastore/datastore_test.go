@@ -1,14 +1,14 @@
 package datastore
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
 func getNewStorePath(t *testing.T) (dspath string, cleanup func()) {
-	d, err := ioutil.TempDir("", "store")
+	d := filepath.Join(os.TempDir(), "store")
+	err := os.Mkdir(d, 0o755)
 	if err != nil {
 		t.Fatalf("Couldn't create tmpfile")
 	}
@@ -41,7 +41,8 @@ func TestDataStore(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var path string
 			if tt.generateTmpDir {
-				d, err := ioutil.TempDir("", "store")
+				d := filepath.Join(os.TempDir(), "store")
+				err := os.Mkdir(d, 0o755)
 				if err != nil {
 					t.Errorf("Couldn't create tmpfile")
 					return
