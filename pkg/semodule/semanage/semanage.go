@@ -14,12 +14,13 @@ void wrap_set_cb(semanage_handle_t *handle, void *arg);
 
 */
 import "C"
+
 import (
 	"bytes"
-	"github.com/containers/selinuxd/pkg/semodule/interface"
 	"sync"
 	"unsafe"
 
+	"github.com/containers/selinuxd/pkg/semodule/interface"
 	"github.com/go-logr/logr"
 )
 

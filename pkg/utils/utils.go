@@ -1,7 +1,8 @@
 package utils
 
 import (
-	"crypto/sha512"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -35,17 +36,17 @@ func PolicyNameFromPath(path string) (string, error) {
 }
 
 // Checksum returns a checksum for a file on a given path
-func Checksum(path string) ([]byte, error) {
+func Checksum(path string) (string, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("unable to calculate checksum: %w", err)
+		return "", fmt.Errorf("unable to calculate checksum: %w", err)
 	}
 	defer f.Close()
 
-	h := sha512.New()
+	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {
-		return nil, fmt.Errorf("unable to calculate checksum: %w", err)
+		return "", fmt.Errorf("unable to calculate checksum: %w", err)
 	}
 
-	return h.Sum(nil), nil
+	return fmt.Sprintf("sha256:%s", hex.EncodeToString(h.Sum(nil))), nil
 }

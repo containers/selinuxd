@@ -39,7 +39,7 @@ func Daemon(opts *SelinuxdOptions, mPath string, sh seiface.Handler, ds datastor
 		defer ds.Close()
 	}
 
-	ss, err := initStatusServer(opts.StatusServerConfig, ds.GetReadOnly(), l)
+	ss, err := initStatusServer(opts.StatusServerConfig, ds.GetReadOnly(), sh, l, mPath)
 	if err != nil {
 		l.Error(err, "Unable initialize status server")
 		panic(err)

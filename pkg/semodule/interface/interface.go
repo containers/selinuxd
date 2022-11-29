@@ -5,6 +5,12 @@ import (
 	"fmt"
 )
 
+type PolicyModule struct {
+	Name     string
+	Ext      string
+	Checksum string
+}
+
 // errors
 var (
 	// ErrHandleCreate is an error when getting a handle to semanage
@@ -23,6 +29,8 @@ var (
 	ErrCannotInstallModule = errors.New("cannot install module")
 	// ErrCommit is an error when committing the changes to the SELinux policy
 	ErrCommit = errors.New("cannot commit changes to policy")
+	// ErrPolicyNotFound is an error policy is not found in SELinux policy modules store
+	ErrPolicyNotFound = errors.New("policy not found in SELinux store")
 )
 
 func NewErrCannotRemoveModule(mName string) error {
@@ -42,7 +50,8 @@ func NewErrCommit(origErrVal int, msg string) error {
 type Handler interface {
 	SetAutoCommit(bool)
 	Install(string) error
-	List() ([]string, error)
+	List() ([]PolicyModule, error)
+	GetPolicyModule(string) (PolicyModule, error)
 	Remove(string) error
 	Commit() error
 	Close() error
