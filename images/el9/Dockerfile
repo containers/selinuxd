@@ -12,33 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.io/almalinux:8 AS build
-ARG GO_VERSION=go1.19.3
-ENV GOPATH="/go"
-ENV PATH="$GOPATH/bin:$PATH"
-USER root
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest as build
+
 WORKDIR /work
 
-RUN mkdir -p bin
-RUN mkdir -p /go
-
-RUN dnf install -y \
-    --enablerepo=powertools \
+RUN microdnf install -y \
     container-selinux \
-    golang make libsemanage-devel
-
-# NOTE(jaosorior): This allows us to use a specific golang version in CentOS as
-# opposed to the older one that comes with the distro.
-RUN go install golang.org/dl/${GO_VERSION}@latest
-RUN ${GO_VERSION} download
+    go-toolset \
+    make \
+    findutils \
+    git-core && microdnf clean all
 
 COPY . /work
 
-RUN GO=${GO_VERSION} SEMODULE_BACKEND=policycoreutils make
+RUN SEMODULE_BACKEND=policycoreutils make
 
-FROM docker.io/almalinux:8
-# TODO(jaosorior): Switch to UBI once we use static linking
-#FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
 # TODO(jaosorior): See if we can run this without root
 USER root
@@ -47,9 +36,8 @@ LABEL name="selinuxd" \
       description="selinuxd is a daemon that listens for files in /etc/selinux.d/ and installs the relevant policies."
 
 # TODO(jaosorior): Remove once we use static linking
-RUN dnf install -y \
-    --enablerepo=powertools \
-    policycoreutils
+RUN microdnf install -y \
+    policycoreutils && microdnf clean all
 
 RUN mkdir -p /usr/share/selinuxd/templates
 COPY --from=build /usr/share/udica/templates/* /usr/share/selinuxd/templates/

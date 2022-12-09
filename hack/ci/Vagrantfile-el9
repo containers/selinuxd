@@ -1,0 +1,50 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrant box for testing
+Vagrant.configure("2") do |config|
+  config.vm.box = "almalinux/9"
+  memory = 6144
+  cpus = 4
+
+  config.vm.provider :virtualbox do |v|
+    v.memory = memory
+    v.cpus = cpus
+  end
+
+  config.vm.provider :libvirt do |v|
+    v.memory = memory
+    v.cpus = cpus
+  end
+
+  config.vm.provision "set-env", type: "shell", run: "once" do |sh|
+    sh.inline = <<~SHELL
+      set -euxo pipefail
+      echo "export IMG='quay.io/security-profiles-operator/selinuxd-el9:latest'" >> /etc/profile.d/selinuxd-env.sh
+      echo "export OS='el9'" >> /etc/profile.d/selinuxd-env.sh
+      echo "export CONTAINER_NAME='selinuxd'" >> /etc/profile.d/selinuxd-env.sh
+    SHELL
+  end
+
+  config.vm.provision "install-dependencies", type: "shell", run: "once" do |sh|
+    sh.inline = <<~SHELL
+    whoami
+      set -euxo pipefail
+      dnf install -y \
+        make \
+        golang \
+        podman \
+        container-selinux \
+        oci-seccomp-bpf-hook \
+        udica
+    SHELL
+  end
+
+  config.vm.provision "load-test-image", type: "shell", run: "once" do |sh|
+    sh.inline = <<~SHELL
+      set -euxo pipefail
+      sudo podman load -i /vagrant/image.tar
+    SHELL
+  end
+
+end
