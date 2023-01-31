@@ -14,7 +14,7 @@ require (
 	github.com/onsi/gomega v1.26.0
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.15.0
-	go.etcd.io/bbolt v1.3.6
+	go.etcd.io/bbolt v1.3.7
 	go.uber.org/zap v1.24.0
 )
 
