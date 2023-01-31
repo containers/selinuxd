@@ -116,8 +116,8 @@ github.com/spf13/viper/internal/encoding/yaml
 # github.com/subosito/gotenv v1.4.2
 ## explicit; go 1.18
 github.com/subosito/gotenv
-# go.etcd.io/bbolt v1.3.6
-## explicit; go 1.12
+# go.etcd.io/bbolt v1.3.7
+## explicit; go 1.17
 go.etcd.io/bbolt
 # go.uber.org/atomic v1.10.0
 ## explicit; go 1.18
