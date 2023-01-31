@@ -119,15 +119,15 @@ image: default-image centos-image fedora-image
 
 .PHONY: default-image
 default-image:
-	$(CONTAINER_RUNTIME) build -f images/Dockerfile.centos -t $(IMAGE_REPO) .
+	$(CONTAINER_RUNTIME) build -f images/centos/Dockerfile -t $(IMAGE_REPO) .
 
 .PHONY: centos-image
 centos-image:
-	$(CONTAINER_RUNTIME) build -f images/Dockerfile.centos -t $(CENTOS_IMAGE_REPO) .
+	$(CONTAINER_RUNTIME) build -f images/centos/Dockerfile -t $(CENTOS_IMAGE_REPO) .
 
 .PHONY: fedora-image
 fedora-image:
-	$(CONTAINER_RUNTIME) build -f images/Dockerfile.fedora -t $(FEDORA_IMAGE_REPO) .
+	$(CONTAINER_RUNTIME) build -f images/fedora/Dockerfile -t $(FEDORA_IMAGE_REPO) .
 
 .PHONY: push
 push:

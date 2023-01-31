@@ -11,7 +11,12 @@ updates:
     interval: daily
   open-pull-requests-limit: 10
 - package-ecosystem: docker
-  directory: "/"
+  directory: "/images/centos"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 10
+- package-ecosystem: docker
+  directory: "/images/fedora"
   schedule:
     interval: weekly
   open-pull-requests-limit: 10
