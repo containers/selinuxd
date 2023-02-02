@@ -20,7 +20,7 @@ jobs:
         image: selinuxd-fedora
         tags: latest ${{ github.sha }}
         dockerfiles: |
-          ./images/Dockerfile.fedora
+          ./images/fedora/Dockerfile
 
   build-centos:
     name: Build CentOS image
@@ -35,4 +35,4 @@ jobs:
         image: selinuxd-centos
         tags: latest ${{ github.sha }}
         dockerfiles: |
-          ./images/Dockerfile.centos
+          ./images/centos/Dockerfile
