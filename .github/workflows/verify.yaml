@@ -11,13 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-       almalinux : ["8"]
+       ubi: ["8", "9"]
     container:
-      image: almalinux:${{ matrix.almalinux }}
+      image: registry.access.redhat.com/ubi${{ matrix.ubi }}/ubi:latest
     steps:
       - uses: actions/checkout@v3
       - name: install packages
-        run: yum -y --enablerepo=powertools install golang make libsemanage-devel diffutils
+        run: dnf -y install container-selinux go-toolset make findutils git-core diffutils tar
       - name: run verify
         run: |
           make verify

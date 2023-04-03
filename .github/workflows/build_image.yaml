@@ -22,8 +22,8 @@ jobs:
         dockerfiles: |
           ./images/fedora/Dockerfile
 
-  build-centos:
-    name: Build CentOS image
+  build-el8:
+    name: Build EL8 image
     runs-on: ubuntu-20.04
 
     steps:
@@ -32,7 +32,22 @@ jobs:
     - name: Buildah Action
       uses: redhat-actions/buildah-build@v2
       with:
-        image: selinuxd-centos
+        image: selinuxd-el8
         tags: latest ${{ github.sha }}
         dockerfiles: |
-          ./images/centos/Dockerfile
+          ./images/el8/Dockerfile
+
+  build-el9:
+    name: Build EL9 image
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Buildah Action
+      uses: redhat-actions/buildah-build@v2
+      with:
+        image: selinuxd-el9
+        tags: latest ${{ github.sha }}
+        dockerfiles: |
+          ./images/el9/Dockerfile
