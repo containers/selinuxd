@@ -21,7 +21,7 @@ jobs:
 
   e2e:
     needs: e2e-image
-    runs-on: macos-10.15
+    runs-on: macos-12
     timeout-minutes: 80
     strategy:
       matrix:
@@ -80,7 +80,7 @@ jobs:
 
   secure-e2e:
     needs: e2e-image
-    runs-on: macos-10.15
+    runs-on: macos-12
     timeout-minutes: 80
     strategy:
       matrix:
