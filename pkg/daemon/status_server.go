@@ -8,9 +8,12 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/containers/selinuxd/pkg/datastore"
+	seiface "github.com/containers/selinuxd/pkg/semodule/interface"
+	"github.com/containers/selinuxd/pkg/utils"
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 )
@@ -31,12 +34,27 @@ type StatusServerConfig struct {
 type statusServer struct {
 	cfg   StatusServerConfig
 	ds    datastore.ReadOnlyDataStore
+	sh    seiface.Handler
 	l     logr.Logger
+	mPath string
 	lst   net.Listener
 	ready bool
 }
 
-func initStatusServer(cfg StatusServerConfig, ds datastore.ReadOnlyDataStore, l logr.Logger) (*statusServer, error) {
+type policyStatus struct {
+	Policy   string `json:"-"`
+	Status   string `json:"status"`
+	Message  string `json:"msg"`
+	Checksum string `json:"-"`
+}
+
+func initStatusServer(
+	cfg StatusServerConfig,
+	ds datastore.ReadOnlyDataStore,
+	sh seiface.Handler,
+	l logr.Logger,
+	mPath string,
+) (*statusServer, error) {
 	if cfg.Path == "" {
 		cfg.Path = DefaultUnixSockAddr
 	}
@@ -48,7 +66,7 @@ func initStatusServer(cfg StatusServerConfig, ds datastore.ReadOnlyDataStore, l 
 		return nil, fmt.Errorf("setting up socket: %w", err)
 	}
 
-	ss := &statusServer{cfg, ds, l, lst, false}
+	ss := &statusServer{cfg, ds, sh, l, mPath, lst, false}
 	return ss, nil
 }
 
@@ -111,13 +129,17 @@ func (ss *statusServer) initializeRoutes(r *mux.Router) {
 }
 
 func (ss *statusServer) listPoliciesHandler(w http.ResponseWriter, r *http.Request) {
-	modules, err := ss.ds.List()
+	modules, err := ss.sh.List()
 	if err != nil {
 		http.Error(w, "Cannot list modules", http.StatusInternalServerError)
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(modules)
+	moduleList := []string{}
+	for _, module := range modules {
+		moduleList = append(moduleList, module.Name)
+	}
+	err = json.NewEncoder(w).Encode(moduleList)
 	if err != nil {
 		ss.l.Error(err, "error writing list response")
 		http.Error(w, "Cannot list modules", http.StatusInternalServerError)
@@ -127,9 +149,9 @@ func (ss *statusServer) listPoliciesHandler(w http.ResponseWriter, r *http.Reque
 func (ss *statusServer) getPolicyStatusHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	policy := vars["policy"]
-	status, err := ss.ds.Get(policy)
-	if errors.Is(err, datastore.ErrPolicyNotFound) {
-		http.Error(w, "couldn't find requested policy", http.StatusNotFound)
+	module, err := ss.sh.GetPolicyModule(policy)
+	if errors.Is(err, seiface.ErrPolicyNotFound) {
+		http.Error(w, "policy is not installed", http.StatusNotFound)
 		return
 	} else if err != nil {
 		ss.l.Error(err, "error getting status")
@@ -137,7 +159,40 @@ func (ss *statusServer) getPolicyStatusHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(status)
+	var policyFile string
+	err = filepath.Walk(ss.mPath, func(path string, info os.FileInfo, err error) error {
+		if info == nil {
+			return nil
+		}
+		if !info.IsDir() && (filepath.Base(path) == policy+".cil" || filepath.Base(path) == policy+".pp") {
+			policyFile = path
+			return nil
+		}
+		return nil
+	})
+	if err != nil {
+		ss.l.Error(err, "error getting status")
+		http.Error(w, "Cannot get status", http.StatusInternalServerError)
+		return
+	}
+
+	cs, csErr := utils.Checksum(policyFile)
+
+	if csErr != nil {
+		http.Error(w, "cannot find policy file "+policyFile, http.StatusNotFound)
+		return
+	}
+
+	if cs != module.Checksum {
+		http.Error(w, "Installed policy "+module.Name+" does not much policy file "+policyFile, http.StatusNotFound)
+		return
+	}
+	err = json.NewEncoder(w).Encode(policyStatus{
+		Policy:   policy,
+		Status:   "Installed",
+		Message:  "",
+		Checksum: module.Checksum,
+	})
 	if err != nil {
 		ss.l.Error(err, "error writing status response")
 		http.Error(w, "Cannot get status", http.StatusInternalServerError)

@@ -49,11 +49,34 @@ func (smt *SEModuleTestHandler) IsModuleInstalled(module string) bool {
 	return false
 }
 
-func (smt *SEModuleTestHandler) List() ([]string, error) {
+func (smt *SEModuleTestHandler) List() ([]seiface.PolicyModule, error) {
 	// Return a copy
 	smt.mu.Lock()
 	defer smt.mu.Unlock()
-	return append([]string(nil), smt.modules...), nil
+	policyModules := []seiface.PolicyModule{}
+	for _, module := range smt.modules {
+		m, err := smt.GetPolicyModule(module)
+		if err != nil {
+			return policyModules, err
+		}
+		policyModules = append(policyModules, m)
+	}
+	return policyModules, nil
+}
+
+func (smt *SEModuleTestHandler) GetPolicyModule(moduleName string) (seiface.PolicyModule, error) {
+	for _, mod := range smt.modules {
+		// The module had already been installed.
+		// Nothing to do
+		if mod == moduleName {
+			return seiface.PolicyModule{
+				Name:     moduleName,
+				Ext:      "cil",
+				Checksum: "sha256:e6c4d9c235af5d3ca50f660fc2283ecc330ebea73ec35241cc9cc47878dab68c",
+			}, nil
+		}
+	}
+	return seiface.PolicyModule{}, seiface.ErrPolicyNotFound
 }
 
 func (smt *SEModuleTestHandler) Remove(modToRemove string) error {

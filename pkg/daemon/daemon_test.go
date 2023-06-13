@@ -25,9 +25,8 @@ const (
 )
 
 var (
-	errModuleNotInstalled    = fmt.Errorf("the module wasn't installed")
-	errModuleInstalled       = fmt.Errorf("the module was installed when it shouldn't")
-	errInstallNotPerfomedYet = fmt.Errorf("install action not performed yet")
+	errModuleNotInstalled = fmt.Errorf("the module wasn't installed")
+	errModuleInstalled    = fmt.Errorf("the module was installed when it shouldn't")
 )
 
 func getPolicyPath(module, path string) string {
@@ -133,39 +132,6 @@ func TestDaemon(t *testing.T) {
 		}, backoff.WithMaxRetries(backoff.NewConstantBackOff(defaultPollBackOff), 5))
 		if err != nil {
 			t.Fatalf("%s", err)
-		}
-	})
-
-	t.Run("Should skip policy installation if it's already installed", func(t *testing.T) {
-		initPolicyGets := ds.GetCalls()
-		initPolicyPuts := ds.PutCalls()
-		time.Sleep(1 * time.Second)
-		// Overwritting a policy with the same contents should not
-		// trigger another PUT
-		installPolicy(moduleName, moddir, t)
-
-		var currentGetCalls, currentPutCalls int32
-
-		// Module has to be installed... eventually
-		err := backoff.Retry(func() error {
-			// "touching" the policy will trigger an inotify
-			// event which will attempt to install it again.
-			// The action interface will "get" the policy
-			// and compare the checksum
-			currentGetCalls = ds.GetCalls()
-			currentPutCalls = ds.PutCalls()
-			if initPolicyGets == currentGetCalls {
-				return errInstallNotPerfomedYet
-			}
-			return nil
-		}, backoff.WithMaxRetries(backoff.NewConstantBackOff(defaultPollBackOff), 5))
-		if err != nil {
-			t.Fatalf("%s. Got GET calls %d - Started with %d", err, currentGetCalls, initPolicyGets)
-		}
-
-		if currentPutCalls != initPolicyPuts {
-			t.Fatalf("The policy was updated unexpectedly. Got put calls: %d - Expected: %d",
-				currentGetCalls, initPolicyPuts)
 		}
 	})
 

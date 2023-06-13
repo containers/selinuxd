@@ -46,20 +46,40 @@ func (smt *SEModulePcuHandler) Install(modulePath string) error {
 	return nil
 }
 
-func (smt *SEModulePcuHandler) List() ([]string, error) {
-	out, err := runSemodule("-lfull")
+func (smt *SEModulePcuHandler) List() ([]seiface.PolicyModule, error) {
+	out, err := runSemodule("-lfull", "--checksum")
 	if err != nil {
 		smt.logger.Error(err, "Listing policies")
 		return nil, seiface.ErrList
 	}
-	modules := make([]string, 0)
+	modules := make([]seiface.PolicyModule, 0)
 	for _, line := range strings.Split(string(out), "\n") {
-		module := strings.Split(line, " ")
+		module := strings.Fields(line)
+		if len(module) != 4 {
+			continue
+		}
 		if module[0] == "350" {
-			modules = append(modules, module[1])
+			policyModule := seiface.PolicyModule{module[1], module[2], module[3]}
+			modules = append(modules, policyModule)
 		}
 	}
 	return modules, nil
+}
+
+func (smt *SEModulePcuHandler) GetPolicyModule(moduleName string) (seiface.PolicyModule, error) {
+	modules, err := smt.List()
+	if err != nil {
+		smt.logger.Error(err, "Getting module checksum")
+		return seiface.PolicyModule{}, seiface.ErrList
+	}
+	for _, module := range modules {
+		// 350 module  cil  sha256:dadb16b11a1d298e57cbd965f5fc060b7a9263b8d6b23af7763e68ac22fb5265
+		if module.Name == moduleName {
+			smt.logger.Info(moduleName, "checksum", module.Checksum)
+			return module, nil
+		}
+	}
+	return seiface.PolicyModule{}, seiface.ErrPolicyNotFound
 }
 
 func (smt *SEModulePcuHandler) Remove(modToRemove string) error {

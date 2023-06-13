@@ -1,8 +1,6 @@
 package daemon
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
 
 	"github.com/containers/selinuxd/pkg/datastore"
@@ -40,34 +38,14 @@ func (pi *policyInstall) do(modulePath string, sh seiface.Handler, ds datastore.
 		return "", fmt.Errorf("installing policy: %w", csErr)
 	}
 
-	p, getErr := ds.Get(policyName)
+	module, getErr := sh.GetPolicyModule(policyName)
 	// If the checksums are equal, the policy is already installed
 	// and in an appropriate state
-	if getErr == nil && bytes.Equal(p.Checksum, cs) {
+	if getErr == nil && module.Checksum == cs {
 		return "", nil
-	} else if getErr != nil && !errors.Is(getErr, datastore.ErrPolicyNotFound) {
-		return "", fmt.Errorf("installing policy: couldn't access datastore: %w", getErr)
 	}
 
 	installErr := sh.Install(pi.path)
-	status := datastore.InstalledStatus
-	var msg string
-
-	if installErr != nil {
-		status = datastore.FailedStatus
-		msg = installErr.Error()
-	}
-
-	ps := datastore.PolicyStatus{
-		Policy:   policyName,
-		Status:   status,
-		Message:  msg,
-		Checksum: cs,
-	}
-	puterr := ds.Put(ps)
-	if puterr != nil {
-		return "", fmt.Errorf("failed persisting status in datastore: %w", puterr)
-	}
 
 	if installErr != nil {
 		return "", fmt.Errorf("failed executing install action: %w", installErr)
@@ -96,9 +74,6 @@ func (pi *policyRemove) do(modulePath string, sh seiface.Handler, ds datastore.D
 	}
 
 	if !pi.moduleInstalled(sh, policyArg) {
-		if err := ds.Remove(policyArg); err != nil {
-			return "Module is not in the system", fmt.Errorf("failed removing policy from datastore: %w", err)
-		}
 		return "No action needed; Module is not in the system", nil
 	}
 
@@ -106,9 +81,6 @@ func (pi *policyRemove) do(modulePath string, sh seiface.Handler, ds datastore.D
 		return "", fmt.Errorf("failed executing remove action: %w", err)
 	}
 
-	if err := ds.Remove(policyArg); err != nil {
-		return "", fmt.Errorf("failed removing policy from datastore: %w", err)
-	}
 	return "", nil
 }
 
@@ -119,7 +91,7 @@ func (pi *policyRemove) moduleInstalled(sh seiface.Handler, policy string) bool 
 	}
 
 	for _, mod := range currentModules {
-		if policy == mod {
+		if policy == mod.Name {
 			return true
 		}
 	}
