@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/containers/selinuxd/pkg/datastore"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-logr/logr"
-	"github.com/gorilla/mux"
 )
 
 const (
@@ -53,7 +53,7 @@ func initStatusServer(cfg StatusServerConfig, ds datastore.ReadOnlyDataStore, l 
 }
 
 func (ss *statusServer) Serve(readychan <-chan bool) error {
-	r := mux.NewRouter()
+	r := chi.NewRouter()
 	ss.initializeRoutes(r)
 
 	server := &http.Server{
@@ -75,25 +75,16 @@ func (ss *statusServer) waitForReady(readychan <-chan bool) {
 	ss.l.Info("Status Server got READY signal")
 }
 
-func (ss *statusServer) initializeRoutes(r *mux.Router) {
+func (ss *statusServer) initializeRoutes(r chi.Router) {
 	// /policies/
-	s := r.PathPrefix("/policies").Subrouter()
-	s.HandleFunc("/", ss.listPoliciesHandler).
-		Methods("GET")
-	s.HandleFunc("/", ss.catchAllNotGetHandler)
-	// IMPORTANT(jaosorior): We should better restrict what characters
-	// does this handler accept
-	s.HandleFunc("/{policy}", ss.getPolicyStatusHandler).
-		Methods("GET")
-	s.HandleFunc("/{policy}", ss.catchAllNotGetHandler)
+	r.Route("/policies", func(r chi.Router) {
+		r.Get("/", ss.listPoliciesHandler)
+		r.Get("/{policy}", ss.getPolicyStatusHandler)
+	})
 
-	// /policies -- without the trailing /
-	r.HandleFunc("/policies", ss.listPoliciesHandler).
-		Methods("GET")
-	r.HandleFunc("/policies", ss.catchAllNotGetHandler)
-	r.HandleFunc("/ready", ss.readyStatusHandler)
-	r.HandleFunc("/ready/", ss.readyStatusHandler)
-	r.HandleFunc("/", ss.catchAllHandler)
+	r.Get("/ready", ss.readyStatusHandler)
+	r.Get("/ready/", ss.readyStatusHandler)
+	r.Get("/", ss.catchAllHandler)
 
 	if ss.cfg.EnableProfiling {
 		r.HandleFunc("/debug/pprof/", pprof.Index)
@@ -125,8 +116,7 @@ func (ss *statusServer) listPoliciesHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (ss *statusServer) getPolicyStatusHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	policy := vars["policy"]
+	policy := chi.URLParam(r, "policy")
 	status, err := ss.ds.Get(policy)
 	if errors.Is(err, datastore.ErrPolicyNotFound) {
 		http.Error(w, "couldn't find requested policy", http.StatusNotFound)
@@ -157,10 +147,6 @@ func (ss *statusServer) readyStatusHandler(w http.ResponseWriter, r *http.Reques
 
 func (ss *statusServer) catchAllHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Invalid path", http.StatusBadRequest)
-}
-
-func (ss *statusServer) catchAllNotGetHandler(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Only GET is allowed", http.StatusBadRequest)
 }
 
 func createSocket(path string, uid, gid int) (net.Listener, error) {
