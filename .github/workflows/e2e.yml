@@ -11,7 +11,7 @@ jobs:
       matrix:
         base: ["fedora", "el8", "el9"]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: make ${{ matrix.base }}-image
       - run: podman save --format=docker-archive -o image.tar quay.io/security-profiles-operator/selinuxd-${{ matrix.base }}:latest
       - uses: actions/upload-artifact@v3
@@ -32,7 +32,7 @@ jobs:
       CONTAINER_NAME: selinuxd
       TEST_OS: ${{ matrix.base }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v3
         with:
           name: ${{ matrix.base }}-image-tar
@@ -91,7 +91,7 @@ jobs:
       CONTAINER_NAME: selinuxd
       TEST_OS: ${{ matrix.base }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v3
         with:
           name: ${{ matrix.base }}-image-tar
