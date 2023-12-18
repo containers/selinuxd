@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM registry.fedoraproject.org/fedora-minimal:38 AS build
+FROM registry.fedoraproject.org/fedora-minimal:39 AS build
 ARG GO_VERSION=go1.19.3
 ENV GOPATH="/go"
 ENV PATH="$GOPATH/bin:$PATH"
@@ -33,7 +33,7 @@ COPY . /work
 
 RUN GO=${GO_VERSION} make
 
-FROM registry.fedoraproject.org/fedora-minimal:38
+FROM registry.fedoraproject.org/fedora-minimal:39
 
 # TODO(jaosorior): See if we can run this without root
 USER root
