@@ -19,6 +19,8 @@ jobs:
       with:
         image: selinuxd-fedora
         tags: latest ${{ github.sha }}
+        platforms: |
+          linux/amd64,linux/arm64
         dockerfiles: |
           ./images/fedora/Dockerfile
 
@@ -34,6 +36,8 @@ jobs:
       with:
         image: selinuxd-el8
         tags: latest ${{ github.sha }}
+        platforms: |
+          linux/amd64,linux/arm64
         dockerfiles: |
           ./images/el8/Dockerfile
 
@@ -49,5 +53,7 @@ jobs:
       with:
         image: selinuxd-el9
         tags: latest ${{ github.sha }}
+        platforms: |
+          linux/amd64,linux/arm64
         dockerfiles: |
           ./images/el9/Dockerfile
