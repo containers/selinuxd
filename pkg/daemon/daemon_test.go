@@ -57,7 +57,6 @@ func getHTTPClient(sockpath string) *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
 			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-				//nolint: wrapcheck // let's not complicate the test
 				return net.Dial("unix", sockpath)
 			},
 		},

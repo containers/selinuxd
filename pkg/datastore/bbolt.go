@@ -124,7 +124,6 @@ func (ds *bboltDataStore) List() ([]string, error) {
 		if root == nil {
 			return ErrDataStoreNotInitialized
 		}
-		//nolint:wrapcheck // this is a closure
 		return root.ForEach(func(k, v []byte) error {
 			output = append(output, string(k))
 			return nil
@@ -142,7 +141,6 @@ func (ds *bboltDataStore) Remove(policy string) error {
 		if root == nil {
 			return ErrDataStoreNotInitialized
 		}
-		//nolint:wrapcheck // this is a closure
 		return root.DeleteBucket([]byte(policy))
 	})
 	if err != nil {
