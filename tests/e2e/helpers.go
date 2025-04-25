@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	//nolint:golint,stylecheck
+	//nolint:staticcheck
 	. "github.com/onsi/ginkgo/v2"
-	//nolint:golint,stylecheck
+	//nolint:staticcheck
 	. "github.com/onsi/gomega"
 )
 
