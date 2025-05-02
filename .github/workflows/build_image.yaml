@@ -9,7 +9,7 @@ on:
 jobs:
   build-fedora:
     name: Build Fedora image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
@@ -26,7 +26,7 @@ jobs:
 
   build-el8:
     name: Build EL8 image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
@@ -43,7 +43,7 @@ jobs:
 
   build-el9:
     name: Build EL9 image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
