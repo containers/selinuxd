@@ -15,7 +15,7 @@ jobs:
     container:
       image: registry.access.redhat.com/ubi${{ matrix.ubi }}/ubi:latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: install packages
         run: dnf -y install container-selinux go-toolset make findutils git-core
       - name: build selinuxd
