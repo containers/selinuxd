@@ -6,7 +6,7 @@ on:
   pull_request:
 jobs:
   e2e-image:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         base: ["fedora", "el8", "el9"]
