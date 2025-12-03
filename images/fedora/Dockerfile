@@ -13,7 +13,7 @@
 # limitations under the License.
 
 FROM registry.fedoraproject.org/fedora-minimal:38 AS build
-ARG GO_VERSION=go1.19.3
+ARG GO_VERSION=go1.24.9
 ENV GOPATH="/go"
 ENV PATH="$GOPATH/bin:$PATH"
 USER root

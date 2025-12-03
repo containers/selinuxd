@@ -105,7 +105,7 @@ func statusCmdFunc(rootCmd *cobra.Command, args []string) {
 }
 
 func handleList(table *tablewriter.Table, response *http.Response) {
-	table.SetHeader([]string{"Name"})
+	table.Header([]string{"Name"})
 	var moduleList []string
 	err := json.NewDecoder(response.Body).Decode(&moduleList)
 	if err != nil {
@@ -119,7 +119,7 @@ func handleList(table *tablewriter.Table, response *http.Response) {
 }
 
 func handleSinglePolicy(table *tablewriter.Table, response *http.Response) {
-	table.SetHeader([]string{"Key", "Value"})
+	table.Header([]string{"Key", "Value"})
 	if response.StatusCode == http.StatusOK {
 		var moduleStatus map[string]string
 		err := json.NewDecoder(response.Body).Decode(&moduleStatus)
